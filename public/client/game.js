@@ -1,21 +1,33 @@
-const socket = io();
-
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    scene: {
-        preload,
-        create
-    }
+// Firebase config — replace with your actual config
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const game = new Phaser.Game(config);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-function preload() {
-    this.load.image('homescreen', 'assets/homescreen.jpeg');
+function login() {
+    const username = document.getElementById("username").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
+    const email = `${username}@game.local`;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            document.body.innerHTML = `<h2>Welcome ${username}!</h2><p>You are now logged in.</p>`;
+            startGame(username);
+        })
+        .catch(error => {
+            document.getElementById("login-status").textContent = "Login failed. Check your credentials.";
+            console.error("Login error:", error.message);
+        });
 }
 
-function create() {
-    this.add.image(400, 300, 'homescreen').setDisplaySize(800, 600);
+function startGame(username) {
+    // Init your game logic here (like Phaser or canvas setup)
+    console.log("Start game as:", username);
 }
