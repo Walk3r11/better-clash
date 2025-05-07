@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Better Clash - Game</title>
+
+    <!-- Firebase auth check -->
+    <script type="module">
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
+            authDomain: "better-clash-136da.firebaseapp.com",
+            projectId: "better-clash-136da",
+            storageBucket: "better-clash-136da.firebasestorage.app",
+            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
+            messagingSenderId: "586663576851",
+            appId: "1:586663576851:web:436c37162a3fa5f32086e6",
+            measurementId: "G-KZSXJLJX6N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let lastActiveTime = Date.now();  // Track the last active time
+        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
+
+        // Map emails to custom user names
+        const emailToName = {
+            'gagas': 'gagas slut',
+            'pederakis': 'pederakis manafakis',
+        };
+
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                return window.location.replace("/login");
+            }
+
+            document.body.style.display = "block";
+
+            const logoutLink = document.querySelector('.logout');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', e => {
+                    e.preventDefault();
+                    signOut(auth).then(() => window.location.replace("/login"));
+                });
+            }
+
+            const emailPrefix = user.email.split('@')[0];
+            const userName = emailToName[emailPrefix] || 'Unknown User';
+
+            const userNameElement = document.createElement('span');
+            userNameElement.textContent = userName;
+            document.querySelector('.nav-logo').appendChild(userNameElement);
+
+            function resetSessionTimeout() {
+                lastActiveTime = Date.now();
+            }
+
+            document.addEventListener('click', resetSessionTimeout);
+            document.addEventListener('keypress', resetSessionTimeout);
+
+            const dbRef = ref(getDatabase());
+            get(child(dbRef, `decks/${user.uid}`)).then(snapshot => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    decks.splice(0, decks.length, ...data);  // Replace in-place
+                    renderDeck(currentDeckIndex);
+                } else {
+                    console.log("No deck data found, using default.");
+                }
+            }).catch(error => {
+                console.error("Load failed:", error);
+            });
+
+            // Save Deck Logic
+            document.getElementById("saveDeckBtn").addEventListener("click", () => {
+                const userDecksRef = ref(db, 'decks/' + user.uid);
+                set(userDecksRef, decks)
+                    .then(() => alert("Decks saved!"))
+                    .catch(error => console.error("Save failed:", error));
+            });
+
+        });
+    </script>
+
+    <!-- Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #5984e7, #6b44d8, #f9d342);
+            background-size: 400% 400%;
+            animation: gradientAnimation 5s ease infinite;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        nav {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f9d342;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 16px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #f9d342;
+            color: #222;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .arena {
+            width: 100%;
+            max-width: 700px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .arena img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        .arena::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        .logout {
+            background: #ff4d4d;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .nav-links .logout:hover {
+            background: #e60000;
+            color: #222;
+        }
+
+        .logout:active {
+            background: #e60000;
+        }
+
+        .logout:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.5);
+        }
+
+        /* Deck Tab Styles */
+        .deck-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .deck-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            max-width: 100%;
+            width: 100%;
+            padding: 0 20px;
+            margin: 20px auto;
+        }
+
+        .deck-slot {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            background-color: #222;
+            border-radius: 10px;
+            border: 2px solid #f9d342;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .slot-title {
+            position: absolute;
+            top: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .slot-container {
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+
+        .card {
+            width: 100px;
+            height: 140px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.1);
+        }
+
+        .card-placeholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .card-placeholder {
+            background-color: #444;
+            border-radius: 10px;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="nav-logo">Better Clash</div>
+        <div class="nav-links">
+            <a href="/game" class="home-tab">Home</a>
+            <a href="/deck" class="deck-tab-link">Deck</a>
+            <a href="#">1v1</a>
+            <a href="#">2v2</a>
+            <a href="#" class="logout">Log Out</a>
+        </div>
+    </nav>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <label for="deckSelector" style="font-weight: bold; font-size: 18px;">Choose Deck: </label>
+        <select id="deckSelector" style="padding: 6px 12px; font-size: 16px; border-radius: 6px;">
+            <!-- Decks 1 to 20 -->
+            <script>
+                for (let i = 1; i <= 20; i++) {
+                    document.write(`<option value="${i}">Deck ${i}</option>`);
+                }
+            </script>
+        </select>
+    </div>
+
+    <div class="deck-tab">
+        <h2>Select Your Cards</h2>
+        <button id="clearDeckBtn" style="
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            margin-top: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;">
+            🗑️ Clear Deck
+        </button>
+
+        <div class="deck-slots">
+            <div class="deck-slot">
+                <div class="slot-title">Slot 1</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 2</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 3</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 4</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 5</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 6</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 7</div>
+                <div class="slot-container"></div>
+            </div>
+            <div class="deck-slot">
+                <div class="slot-title">Slot 8</div>
+                <div class="slot-container"></div>
+            </div>
+        </div>
+
+        <button id="saveDeckBtn">💾 Save Deck</button>
+
+        <h2>Available Cards</h2>
+        <div class="card-container">
+            <div class="card">
+                <div class="card-placeholder">Card 1</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 2</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 3</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 4</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 5</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 6</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 7</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 8</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 9</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 10</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 11</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 12</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 13</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 14</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 15</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 16</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 17</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 18</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 19</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 20</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 21</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 22</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 23</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 24</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 25</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 26</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 27</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 28</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 29</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 30</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 31</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 32</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 33</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 34</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 35</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 36</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 37</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 38</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 39</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 40</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 41</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 42</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 43</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 44</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 45</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 46</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 47</div>
+            </div>
+            <div class="card">
+                <div class="card-placeholder">Card 48</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const decks = Array.from({ length: 20 }, () => Array(8).fill(null)); // 20 decks, each with 8 slots
+        let currentDeckIndex = 0; // default: Deck 1
+
+        const deckSelector = document.getElementById('deckSelector');
+        const deckSlots = document.querySelectorAll('.slot-container');
+        const cards = document.querySelectorAll('.card');
+
+        // Populate deck when changed
+        function renderDeck(index) {
+            const currentDeck = decks[index];
+            deckSlots.forEach((slot, i) => {
+                slot.innerHTML = ''; // clear slot
+                if (currentDeck[i]) {
+                    const card = document.createElement('div');
+                    card.className = 'card-placeholder';
+                    card.textContent = currentDeck[i];
+                    card.style.cursor = 'pointer';
+                    card.title = 'Click to remove';
+                    card.addEventListener('click', () => {
+                        decks[currentDeckIndex][i] = null;
+                        renderDeck(currentDeckIndex);
+                    });
+                    slot.appendChild(card);
+                }
+            });
+        }
+
+        // Update deck on selector change
+        deckSelector.addEventListener('change', (e) => {
+            currentDeckIndex = parseInt(e.target.value, 10) - 1;
+            renderDeck(currentDeckIndex);
+        });
+
+        // Card click -> Add to current deck
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                const cardName = card.textContent.trim();
+                const deck = decks[currentDeckIndex];
+                const firstEmptyIndex = deck.findIndex(slot => slot === null);
+                if (deck.includes(cardName)) {
+                    alert("This card is already in your deck!");
+                } else if (firstEmptyIndex !== -1) {
+                    deck[firstEmptyIndex] = cardName;
+                    renderDeck(currentDeckIndex);
+                } else {
+                    alert("Deck is full! Remove a card before adding.");
+                }
+            });
+        });
+
+        // Initialize
+        renderDeck(currentDeckIndex);
+
+        const clearDeckBtn = document.getElementById('clearDeckBtn');
+        clearDeckBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to clear the entire deck?")) {
+                decks[currentDeckIndex] = Array(8).fill(null);
+                renderDeck(currentDeckIndex);
+            }
+        });
+
+        document.getElementById("saveDeckBtn").addEventListener("click", () => {
+            const user = auth.currentUser;
+            if (!user) return alert("Not signed in");
+
+            const userDecksRef = ref(db, 'decks/' + user.uid);
+            set(userDecksRef, decks)
+                .then(() => alert("Decks saved!"))
+                .catch(error => console.error("Save failed:", error));
+        });
+    </script>
+
+</body>
+
+</html>
