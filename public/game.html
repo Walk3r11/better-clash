@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Better Clash - Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #f9d342;
+        }
+
+        p {
+            color: #ccc;
+        }
+
+        .logout-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f9d342;
+            color: #2a2a2a;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #e0c030;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <h1>Welcome to Better Clash!</h1>
+        <p>Here is where the game data and interactions would be displayed.</p>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <script type="module">
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
+            authDomain: "better-clash-136da.firebaseapp.com",
+            projectId: "better-clash-136da",
+            storageBucket: "better-clash-136da.firebasestorage.app",
+            messagingSenderId: "586663576851",
+            appId: "1:586663576851:web:436c37162a3fa5f32086e6",
+            measurementId: "G-KZSXJLJX6N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        function logout() {
+            signOut(auth).then(() => {
+                alert("You have logged out.");
+                window.location.href = 'index.html'; // Redirect to login page
+            }).catch((error) => {
+                alert("Error logging out: " + error.message);
+            });
+        }
+    </script>
+</body>
+
+</html>
