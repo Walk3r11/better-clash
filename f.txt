@@ -1,0 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBDVBMZWGoso6_a9FO4cqJHepU_nsRjgE0",
+  authDomain: "better-clash.firebaseapp.com",
+  projectId: "better-clash",
+  storageBucket: "better-clash.firebasestorage.app",
+  messagingSenderId: "266752377387",
+  appId: "1:266752377387:web:524d72cfaf2627cd22606e",
+  measurementId: "G-SK9Z6LZ44P"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
