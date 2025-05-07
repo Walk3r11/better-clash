@@ -195,7 +195,7 @@
                         .then((userCredential) => {
                             const user = userCredential.user;
                             console.log('User logged in:', user);
-                            window.location.href = '/game';
+                            window.location.replace("/game"); // Automatically redirect to /game
                         })
                         .catch((error) => {
                             alert(`Error: ${error.message}`);
@@ -205,11 +205,6 @@
             .catch((error) => {
                 console.error("Error setting persistence:", error);
             });
-
-        // Refresh the page every 15 minutes (900000 ms)
-        setInterval(() => {
-            window.location.reload();
-        }, 900000); // 15 minutes in milliseconds
     </script>
 </body>
 

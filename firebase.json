@@ -14,7 +14,7 @@
       }
     ],
     "rewrites": [
-      { "source": "/login", "destination": "/login.html" },
+      { "source": "/login", "destination": "/index.html" },
       { "source": "/game", "destination": "/game.html" }
     ]
   },

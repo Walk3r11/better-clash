@@ -61,18 +61,6 @@
     
             document.addEventListener('click', resetSessionTimeout);
             document.addEventListener('keypress', resetSessionTimeout);
-    
-            setInterval(() => {
-                if (Date.now() - lastActiveTime > sessionTimeout) {
-                    alert('Session expired. Please log in again.');
-                    signOut(auth).then(() => window.location.replace("/login"));
-                }
-            }, 60000);  // 1-minute interval
-    
-            // Refresh the page every 15 minutes (900000 ms)
-            setInterval(() => {
-                window.location.reload();
-            }, 900000); // 15 minutes in milliseconds
         });
     </script>    
 
