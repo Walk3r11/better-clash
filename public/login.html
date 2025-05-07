@@ -50,7 +50,8 @@
             align-items: center;
             height: 100%;
             width: 100%;
-            background: rgba(0, 0, 0, 0.7); /* Transparent overlay */
+            background: rgba(0, 0, 0, 0.7);
+            /* Transparent overlay */
             padding: 20px;
         }
 
@@ -59,7 +60,8 @@
             max-width: 400px;
             width: 100%;
             text-align: center;
-            background-color: rgba(0, 0, 0, 0.8); /* Dark background */
+            background-color: rgba(0, 0, 0, 0.8);
+            /* Dark background */
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
@@ -69,7 +71,8 @@
         .logo h1 {
             font-size: 36px;
             font-weight: bold;
-            color: #f9d342; /* Gold color */
+            color: #f9d342;
+            /* Gold color */
             margin-bottom: 20px;
         }
 
@@ -101,7 +104,8 @@
         input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #f9d342; /* Gold focus border */
+            border-color: #f9d342;
+            /* Gold focus border */
         }
 
         /* Button styling */
@@ -119,7 +123,8 @@
         }
 
         button:hover {
-            background-color: #e0c030; /* Slightly darker yellow on hover */
+            background-color: #e0c030;
+            /* Slightly darker yellow on hover */
         }
 
         /* Signup link styling */
@@ -161,10 +166,9 @@
             </div>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
@@ -179,22 +183,33 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        document.getElementById("login-form").addEventListener("submit", function (e) {
-            e.preventDefault();
+        setPersistence(auth, browserSessionPersistence)
+            .then(() => {
+                document.getElementById("login-form").addEventListener("submit", function (e) {
+                    e.preventDefault();
 
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
+                    const email = document.getElementById("email").value;
+                    const password = document.getElementById("password").value;
 
-            signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    console.log('User logged in:', user);
-                    window.location.href = 'game.html';
-                })
-                .catch((error) => {
-                    alert(`Error: ${error.message}`);
+                    signInWithEmailAndPassword(auth, email, password)
+                        .then((userCredential) => {
+                            const user = userCredential.user;
+                            console.log('User logged in:', user);
+                            window.location.href = '/game';
+                        })
+                        .catch((error) => {
+                            alert(`Error: ${error.message}`);
+                        });
                 });
-        });
+            })
+            .catch((error) => {
+                console.error("Error setting persistence:", error);
+            });
+
+        // Refresh the page every 15 minutes (900000 ms)
+        setInterval(() => {
+            window.location.reload();
+        }, 900000); // 15 minutes in milliseconds
     </script>
 </body>
 

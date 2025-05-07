@@ -5,6 +5,17 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "/login",
+        "type": 301
+      }
+    ],
+    "rewrites": [
+      { "source": "/login", "destination": "/login.html" },
+      { "source": "/game", "destination": "/game.html" }
     ]
   },
   "database": {

@@ -2,67 +2,15 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Better Clash - Game</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
 
-        .game-container {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 15px;
-            width: 80%;
-            max-width: 600px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            color: #f9d342;
-        }
-
-        p {
-            color: #ccc;
-        }
-
-        .logout-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #f9d342;
-            color: #2a2a2a;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .logout-btn:hover {
-            background-color: #e0c030;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="game-container">
-        <h1>Welcome to Better Clash!</h1>
-        <p>Here is where the game data and interactions would be displayed.</p>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
+    <!-- Firebase auth check -->
     <script type="module">
-        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    
         const firebaseConfig = {
             apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
             authDomain: "better-clash-136da.firebaseapp.com",
@@ -72,19 +20,244 @@
             appId: "1:586663576851:web:436c37162a3fa5f32086e6",
             measurementId: "G-KZSXJLJX6N"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+    
+        let lastActiveTime = Date.now();  // Track the last active time
+        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
+    
+        // Map emails to custom user names
+        const emailToName = {
+            'gagas': 'gagas slut',
+            'pederakis': 'pederakis manafakis',
+        };
+    
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                return window.location.replace("/login");
+            }
+    
+            document.body.style.display = "block";
+    
+            const logoutLink = document.querySelector('.logout');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', e => {
+                    e.preventDefault();
+                    signOut(auth).then(() => window.location.replace("/login"));
+                });
+            }
+    
+            const emailPrefix = user.email.split('@')[0];
+            const userName = emailToName[emailPrefix] || 'Unknown User'; 
+    
+            const userNameElement = document.createElement('span');
+            userNameElement.textContent = ` (${userName})`;
+            document.querySelector('.nav-logo').appendChild(userNameElement);
+    
+            function resetSessionTimeout() {
+                lastActiveTime = Date.now();
+            }
+    
+            document.addEventListener('click', resetSessionTimeout);
+            document.addEventListener('keypress', resetSessionTimeout);
+    
+            setInterval(() => {
+                if (Date.now() - lastActiveTime > sessionTimeout) {
+                    alert('Session expired. Please log in again.');
+                    signOut(auth).then(() => window.location.replace("/login"));
+                }
+            }, 60000);  // 1-minute interval
+    
+            // Refresh the page every 15 minutes (900000 ms)
+            setInterval(() => {
+                window.location.reload();
+            }, 900000); // 15 minutes in milliseconds
+        });
+    </script>    
 
-        function logout() {
-            signOut(auth).then(() => {
-                alert("You have logged out.");
-                window.location.href = 'index.html'; // Redirect to login page
-            }).catch((error) => {
-                alert("Error logging out: " + error.message);
-            });
+    <!-- Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    </script>
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #5984e7, #6b44d8, #f9d342);
+            background-size: 400% 400%;
+            animation: gradientAnimation 5s ease infinite;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        nav {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f9d342;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 16px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #f9d342;
+            color: #222;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .arena {
+            width: 100%;
+            max-width: 700px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .arena img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        .arena::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        .logout {
+            background: #ff4d4d;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .nav-links .logout:hover {
+            background: #e60000;
+            color: #222;
+        }
+
+        .logout:active {
+            background: #e60000;
+        }
+
+        .logout:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.5);
+        }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-logo {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .nav-links a {
+                width: 100%;
+                text-align: left;
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+
+            .main-content {
+                padding: 10px;
+            }
+
+            .arena {
+                border-radius: 12px;
+            }
+
+            .arena img {
+                border-radius: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="nav-logo">Better Clash</div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Deck</a>
+            <a href="#">1v1</a>
+            <a href="#">2v2</a>
+            <a href="#" class="logout">Log Out</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="arena">
+            <img src="assets/homescreen.jpeg" alt="Arena">
+        </div>
+    </div>
 </body>
 
 </html>
