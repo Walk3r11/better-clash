@@ -105,6 +105,7 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+            position: relative;
         }
 
         .nav-logo {
@@ -189,29 +190,66 @@
             box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.5);
         }
 
+        /* Hamburger menu style */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            font-size: 30px;
+            color: white;
+            padding: 10px;
+            position: absolute;
+            top: 1px;
+            right: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger div {
+            width: 30px;
+            height: 4px;
+            background-color: white;
+            margin: 6px 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links.active {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
         /* MOBILE OPTIMIZATION */
         @media (max-width: 768px) {
-            nav {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .nav-logo {
-                font-size: 20px;
-                margin-bottom: 10px;
-            }
-
             .nav-links {
+                display: none;
                 flex-direction: column;
                 width: 100%;
-                gap: 10px;
             }
 
-            .nav-links a {
-                width: 100%;
-                text-align: left;
-                font-size: 14px;
-                padding: 10px 20px;
+            .nav-links.active {
+                display: flex;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .hamburger.toggle div:nth-child(1) {
+                transform: rotate(-45deg) translate(-5px, 6px);
+            }
+
+            .hamburger.toggle div:nth-child(2) {
+                opacity: 0;
+            }
+
+            .hamburger.toggle div:nth-child(3) {
+                transform: rotate(45deg) translate(-5px, -6px);
             }
 
             .main-content {
@@ -232,6 +270,11 @@
 <body>
     <nav>
         <div class="nav-logo">Better Clash</div>
+        <div class="hamburger" onclick="toggleMenu()">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
         <div class="nav-links">
             <a href="/game">Home</a>
             <a href="/deck">Deck</a>
@@ -246,6 +289,15 @@
             <img src="assets/maps/homescreen.jpeg" alt="Arena">
         </div>
     </div>
+
+    <script>
+        function toggleMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            const hamburger = document.querySelector('.hamburger');
+            navLinks.classList.toggle('active');
+            hamburger.classList.toggle('toggle');
+        }
+    </script>
 </body>
 
 </html>

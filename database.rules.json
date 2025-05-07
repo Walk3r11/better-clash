@@ -1,6 +1,12 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false
+    ".read": "auth != null", 
+    ".write": "auth != null", 
+    "decks": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid" 
+      }
+    }
   }
 }
