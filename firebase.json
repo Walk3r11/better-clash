@@ -19,7 +19,8 @@
       { "source": "/deck", "destination": "/deck.html" },
       { "source": "/shop", "destination": "/shop.html" },
       { "source": "/1v1", "destination": "/1v1.html" },
-      { "source": "/2v2", "destination": "/2v2.html" }
+      { "source": "/2v2", "destination": "/2v2.html" },
+      { "source": "/inventory", "destination": "/inv.html" }
     ]
   },
   "database": {

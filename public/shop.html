@@ -8,41 +8,40 @@
 
     <!-- Firebase auth check -->
     <script type="module">
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
             authDomain: "better-clash-136da.firebaseapp.com",
             projectId: "better-clash-136da",
             databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
-            storageBucket: "better-clash-136da.firebasestorage.app",
+            storageBucket: "better-clash-136da.appspot.com",
             messagingSenderId: "586663576851",
             appId: "1:586663576851:web:436c37162a3fa5f32086e6",
             measurementId: "G-KZSXJLJX6N"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-
-        let lastActiveTime = Date.now();  // Track the last active time
-        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
-
-        // Map emails to custom user names
+    
         const emailToName = {
             'gagas': 'gagas slut',
             'pederakis': 'pederakis manafakis',
         };
-
+    
         onAuthStateChanged(auth, user => {
             if (!user) {
-                return window.location.replace("/login");
+                window.location.replace("/login");
+                return;
             }
-
+    
             document.body.style.display = "block";
-
+    
+            const userRef = ref(db, 'users/' + user.uid);
+    
             const logoutLink = document.querySelector('.logout');
             if (logoutLink) {
                 logoutLink.addEventListener('click', e => {
@@ -50,23 +49,60 @@
                     signOut(auth).then(() => window.location.replace("/login"));
                 });
             }
-
+    
             const emailPrefix = user.email.split('@')[0];
             const userName = emailToName[emailPrefix] || 'Unknown User';
-
+    
             const userNameElement = document.createElement('span');
             userNameElement.textContent = ` (${userName})`;
             document.querySelector('.nav-logo').appendChild(userNameElement);
-
-            function resetSessionTimeout() {
-                lastActiveTime = Date.now();
-            }
-
-            document.addEventListener('click', resetSessionTimeout);
-            document.addEventListener('keypress', resetSessionTimeout);
+    
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData && userData.gems) {
+                    const userGems = userData.gems;
+                    const buyButtons = document.querySelectorAll('.buy-button');
+    
+                    buyButtons.forEach(button => {
+                        button.addEventListener("click", () => {
+                            const itemName = button.closest('.modal-content').querySelector('#modal-title').textContent;
+                            const itemPrice = parseInt(button.closest('.modal-content').querySelector('#modal-price').textContent);
+    
+                            if (userGems >= itemPrice) {
+                                // Deduct gems and add item to inventory
+                                const updatedGems = userGems - itemPrice;
+                                const updatedInventory = userData.inventory ? [...userData.inventory, itemName] : [itemName];
+    
+                                // Update user gems and inventory in the database
+                                update(userRef, {
+                                    gems: updatedGems,
+                                    inventory: updatedInventory
+                                }).then(() => {
+                                    alert(`You bought "${itemName}" for ${itemPrice} gems!`);
+                                    modal.classList.add("hidden");
+    
+                                    // Find the corresponding shop item based on its data-name
+                                    const shopItem = document.querySelector(`.shop-item[data-name="${itemName}"]`);
+    
+                                    if (shopItem) {
+                                        // Hide the purchased item from the shop
+                                        shopItem.style.display = 'none';
+                                    } else {
+                                        console.error("Shop item not found.");
+                                    }
+                                }).catch(error => {
+                                    console.error("Error updating user data:", error);
+                                });
+                            } else {
+                                alert("You do not have enough gems!");
+                            }
+                        });
+                    });
+                }
+            });
         });
     </script>
-
+    
     <!-- Styles -->
     <style>
         * {
@@ -267,6 +303,165 @@
                 border-radius: 12px;
             }
         }
+
+        .shop-container {
+            padding: 40px 20px;
+            max-width: 1100px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .shop-title {
+            font-size: 42px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f9d342;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .shop-section h2,
+        .daily-drop h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .shop-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .shop-item img {
+            width: 100%;
+            border-radius: 12px;
+            object-fit: cover;
+            max-height: 120px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .shop-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .shop-item span {
+            color: #fff;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .daily-drop {
+            padding: 20px;
+            background: linear-gradient(135deg, #f9d342, #f38b00);
+            border-radius: 16px;
+            text-align: center;
+            color: #222;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .daily-item {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: #222;
+            color: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            gap: 20px;
+            max-width: 700px;
+            width: 90%;
+            box-shadow: 0 0 20px #000;
+            position: relative;
+            flex-wrap: wrap;
+        }
+
+        .modal-image img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: #111;
+        }
+
+        .modal-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .modal-text h3 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .modal-price {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .gem-icon {
+            width: 60px;
+            height: 45px;
+            margin-right: 8px;
+        }
+
+        .buy-button {
+            background-color: #f9d342;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #222;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .buy-button:hover {
+            background-color: #ffe066;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+        }
     </style>
 </head>
 
@@ -282,11 +477,126 @@
             <a href="/game">Home</a>
             <a href="/shop">Shop</a>
             <a href="/deck">Deck</a>
+            <a href="/inventory">Inventory</a>
             <a href="/1v1">1v1</a>
             <a href="/2v2">2v2</a>
             <a href="#" class="logout">Log Out</a>
         </div>
     </nav>
+    <div class="shop-container">
+        <h1 class="shop-title">Shop</h1>
+
+        <section class="shop-section">
+            <h2>Banners</h2>
+            <div class="item-grid">
+                <div class="shop-item" data-name="Destruction">
+                    <img src="assets/banners/Banner_Destruction_BG.png" alt="Destruction Banner" />
+                    <span>Destruction</span>
+                </div>
+                <div class="shop-item" data-name="Red Skies">
+                    <img src="assets/banners/Banner_RedSkies.png" alt="Red Skies Banner" />
+                    <span>Red Skies</span>
+                </div>
+                <div class="shop-item" data-name="Skeleton Witch">
+                    <img src="assets/banners/SkeletonWitchEvoBG.png" alt="Skeleton Witch Banner" />
+                    <span>Skeleton Witch</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="shop-section">
+            <h2>Emotes</h2>
+            <div class="item-grid">
+                <div class="shop-item" data-name="Goblin Queen Cry">
+                    <img src="assets/emotes/Emote_GoblinQueenCry.png" alt="Goblin Queen Cry" />
+                    <span>Goblin Queen Cry</span>
+                </div>
+                <div class="shop-item" data-name="Thumbs Down">
+                    <img src="assets/emotes/Emote_GoblinQueenThumbsDown.png" alt="Goblin Queen Thumbs Down" />
+                    <span>Thumbs Down</span>
+                </div>
+                <div class="shop-item" data-name="King Cry">
+                    <img src="assets/emotes/Emote_King_ShareCry.png" alt="King Share Cry" />
+                    <span>King Cry</span>
+                </div>
+                <div class="shop-item" data-name="Squad Baby">
+                    <img src="assets/emotes/Emote_King_SquadBaby.png" alt="King Squad Baby" />
+                    <span>Squad Baby</span>
+                </div>
+                <div class="shop-item" data-name="Nope">
+                    <img src="assets/emotes/Emote_Nope.png" alt="Nope Emote" />
+                    <span>Nope</span>
+                </div>
+                <div class="shop-item" data-name="Yo Chill">
+                    <img src="assets/emotes/Emote_Princess_YoChill.png" alt="Princess Yo Chill" />
+                    <span>Yo Chill</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="shop-section">
+            <h2>Maps</h2>
+            <div class="item-grid">
+                <div class="shop-item" data-name="Silent Sanctuary">
+                    <img src="assets/maps/Silent_Sanctuary_Arena.png" alt="Silent Sanctuary" />
+                    <span>Silent Sanctuary</span>
+                </div>
+                <div class="shop-item" data-name="Spooky Town">
+                    <img src="assets/maps/Spooky_Town_Arena.png" alt="Spooky Town" />
+                    <span>Spooky Town</span>
+                </div>
+                <div class="shop-item" data-name="Goblin Bonanza">
+                    <img src="assets/maps/Arena_GoblinBonanza_Diorama.png" alt="Goblin Bonanza" />
+                    <span>Goblin Bonanza</span>
+                </div>
+                <div class="shop-item" data-name="Gravekeeper's Daughter">
+                    <img src="assets/maps/GravekeepersDaughter_Diorama.png" alt="Gravekeeper's Daughter" />
+                    <span>Gravekeeper's Daughter</span>
+                </div>
+                <div class="shop-item" data-name="Executioner's Kitchen">
+                    <img src="assets/maps/Executioners_Kitchen_Arena.png" alt="Executioner's Kitchen" />
+                    <span>Executioner's Kitchen</span>
+                </div>
+                <div class="shop-item" data-name="Royal Crypt">
+                    <img src="assets/maps/Royal_Crypt_Arena.png" alt="Royal Crypt" />
+                    <span>Royal Crypt</span>
+                </div>
+                <div class="shop-item" data-name="Rune Giant">
+                    <img src="assets/maps/Arena_RuneGiant_Diorama.png" alt="Rune Giant" />
+                    <span>Rune Giant</span>
+                </div>
+                <div class="shop-item" data-name="Dragon Spa">
+                    <img src="assets/maps/Dragon_Spa_Arena.png" alt="Dragon Spa" />
+                    <span>Dragon Spa</span>
+                </div>
+                <div class="shop-item" data-name="Pekka's Playhouse">
+                    <img src="assets/maps/pekkas_Playhouse_Arena.png" alt="Pekka's Playhouse" />
+                    <span>Pekka's Playhouse</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="daily-drop">
+            <h2>🎁 Daily Drop</h2>
+            <div class="daily-item">✨ Surprise Item! Come back daily.</div>
+        </section>
+    </div>
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" style="cursor: pointer;">&times;</span>
+            <div class="modal-image">
+                <img id="modal-img" src="" alt="Item Preview">
+            </div>
+            <div class="modal-text">
+                <h3 id="modal-title">Item Name</h3>
+                <p class="modal-price">
+                    <img src="assets/gems.png" alt="Gems" class="gem-icon">
+                    <span id="modal-price">0</span>
+                </p>
+                <button class="buy-button">Buy</button>
+            </div>
+        </div>
+    </div>
     <script>
         function toggleMenu() {
             const navLinks = document.querySelector('.nav-links');
@@ -294,6 +604,45 @@
             navLinks.classList.toggle('active');
             hamburger.classList.toggle('toggle');
         }
+
+        const modal = document.getElementById("item-modal");
+        const modalImg = document.getElementById("modal-img");
+        const modalTitle = document.getElementById("modal-title");
+        const modalPrice = document.getElementById("modal-price");
+        const closeBtn = document.querySelector(".close-btn");
+
+        const pricing = {
+            banners: 300,
+            emotes: 150,
+            maps: 500
+        };
+
+        document.querySelectorAll(".shop-section").forEach(section => {
+            const type = section.querySelector("h2").textContent.toLowerCase();
+            section.querySelectorAll(".shop-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    const img = item.querySelector("img").src;
+                    const title = item.querySelector("span").textContent;
+                    const price = pricing[type] || 0;
+
+                    modalImg.src = img;
+                    modalTitle.textContent = title;
+                    modalPrice.textContent = price;
+
+                    modal.classList.remove("hidden");
+                });
+            });
+        });
+
+        closeBtn.addEventListener("click", () => {
+            modal.classList.add("hidden");
+        });
+
+        window.addEventListener("click", e => {
+            if (e.target === modal) {
+                modal.classList.add("hidden");
+            }
+        });
     </script>
 </body>
 

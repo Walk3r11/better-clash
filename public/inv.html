@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Better Clash - Game</title>
+    <title>Better Clash - Inventory</title>
 
     <!-- Firebase auth check -->
     <script type="module">
@@ -38,48 +38,37 @@
 
         onAuthStateChanged(auth, (user) => {
             if (!user) return;
+            
+            const emailPrefix = user.email.split('@')[0];
+            const userName = emailToName[emailPrefix] || 'Unknown User';
 
-            const logRef = ref(db, 'battleLog');
-            const logList = document.getElementById('log-entries');
+            const userNameElement = document.createElement('span');
+            userNameElement.textContent = ` (${userName})`;
+            document.querySelector('.nav-logo').appendChild(userNameElement);
 
-            onValue(logRef, (snapshot) => {
-                logList.innerHTML = '';
+            const db = getDatabase();
+            const userRef = ref(db, 'users/' + user.uid);
 
-                document.body.style.display = "block";
+            onValue(userRef, (snapshot) => {
+                const data = snapshot.val();
+                const inventoryList = document.getElementById('inventory-list');
+                inventoryList.innerHTML = '';  // Clear previous entries
 
-                const logoutLink = document.querySelector('.logout');
-                if (logoutLink) {
-                    logoutLink.addEventListener('click', e => {
-                        e.preventDefault();
-                        signOut(auth).then(() => window.location.replace("/login"));
+                if (data && data.inventory && Array.isArray(data.inventory)) {
+                    data.inventory.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.textContent = item;
+                        itemDiv.style.padding = "10px";
+                        itemDiv.style.margin = "10px";
+                        itemDiv.style.background = "rgba(255,255,255,0.1)";
+                        itemDiv.style.borderRadius = "8px";
+                        inventoryList.appendChild(itemDiv);
                     });
-                }
-
-                const emailPrefix = user.email.split('@')[0];
-                const userName = emailToName[emailPrefix] || 'Unknown User';
-
-                const userNameElement = document.createElement('span');
-                userNameElement.textContent = ` (${userName})`;
-                document.querySelector('.nav-logo').appendChild(userNameElement);
-
-                const logs = [];
-                snapshot.forEach(child => {
-                    const data = child.val();
-                    if (data.user === user.email) {
-                        logs.push(data.message);
-                    }
-                });
-
-                if (logs.length === 0) {
-                    logList.innerHTML = '<li>No recent battles</li>';
                 } else {
-                    logs.reverse().forEach(msg => {
-                        const li = document.createElement('li');
-                        li.textContent = msg;
-                        logList.appendChild(li);
-                    });
+                    inventoryList.textContent = "Your inventory is empty.";
                 }
             });
+
         });
     </script>
 
@@ -159,32 +148,6 @@
             align-items: center;
             padding: 20px;
             min-height: calc(100vh - 80px);
-        }
-
-        .arena {
-            width: 100%;
-            max-width: 700px;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
-        }
-
-        .arena img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-            border-radius: 20px;
-        }
-
-        .arena::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            background: radial-gradient(circle, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
-            pointer-events: none;
         }
 
         .logout {
@@ -274,59 +237,6 @@
             .main-content {
                 padding: 10px;
             }
-
-            .arena {
-                border-radius: 12px;
-            }
-
-            .arena img {
-                border-radius: 12px;
-            }
-        }
-
-        .arena-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 700px;
-        }
-
-        .battle-log {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 200px;
-            max-height: 300px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 12px;
-            overflow-y: auto;
-            z-index: 10;
-            color: white;
-            font-size: 14px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .battle-log h3 {
-            font-size: 16px;
-            margin-bottom: 8px;
-            color: #f9d342;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 4px;
-        }
-
-        .battle-log ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .battle-log li {
-            margin-bottom: 8px;
-            color: #eee;
-            padding-left: 5px;
         }
     </style>
 </head>
@@ -349,21 +259,9 @@
             <a href="#" class="logout">Log Out</a>
         </div>
     </nav>
-
     <div class="main-content">
-        <div class="arena-wrapper">
-            <div class="battle-log" id="battle-log">
-                <h3>Battle Log</h3>
-                <ul id="log-entries">
-                    <li>Loading...</li>
-                </ul>
-            </div>
-            <div class="arena">
-                <img src="assets/maps/GravekeepersDaughter_Diorama.png" alt="Arena">
-            </div>
-        </div>
+        <div id="inventory-list"></div>
     </div>
-
     <script>
         function toggleMenu() {
             const navLinks = document.querySelector('.nav-links');
