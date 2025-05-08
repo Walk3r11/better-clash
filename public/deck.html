@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Better Clash - Game</title>
+    <title>Better Clash - Deck</title>
 
     <script type="module">
         import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -415,6 +415,71 @@
                 transform: rotate(45deg) translate(-5px, -6px);
             }
         }
+
+        .info-btn {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f9d342;
+            color: #222;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 2;
+            opacity: 0.9;
+            transition: background-color 0.3s;
+        }
+
+        .info-btn:hover {
+            background-color: #e6c200;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(4px);
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .close-button {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 
@@ -428,9 +493,10 @@
         </div>
         <div class="nav-links">
             <a href="/game">Home</a>
+            <a href="/shop">Shop</a>
             <a href="/deck">Deck</a>
-            <a href="#">1v1</a>
-            <a href="#">2v2</a>
+            <a href="/1v1">1v1</a>
+            <a href="/2v2">2v2</a>
             <a href="#" class="logout">Log Out</a>
         </div>
     </nav>
@@ -516,89 +582,295 @@
 
         <h2>Available Cards</h2>
         <div class="card-container">
-            <div class="card">
+            <div class="card" onclick="addCard('Bats Evolution')">
                 <img src="assets/cards/Bats_evolution_card.png" alt="Bats Evolution Card" />
                 <div class="card-placeholder">Bats Evolution</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Bats Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Musketeer Evolution')">
                 <img src="assets/cards/Card_Musketeer_Evolution.png" alt="Musketeer Evolution Card" />
                 <div class="card-placeholder">Musketeer Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Musketeer Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Bomber Evolution')">
                 <img src="assets/cards/Card_Bomber_Evolution.png" alt="Bomber Evolution Card" />
                 <div class="card-placeholder">Bomber Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Bomber Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Rocket')">
                 <img src="assets/cards/Card_Rocket.png" alt="Rocket Card" />
                 <div class="card-placeholder">Rocket</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Rocket')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Cannon Evolution')">
                 <img src="assets/cards/Card_Cannon_Evolution.png" alt="Cannon Evolution Card" />
                 <div class="card-placeholder">Cannon Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Cannon Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Tesla Evolution')">
                 <img src="assets/cards/Card_Tesla_Evolution.png" alt="Tesla Evolution Card" />
                 <div class="card-placeholder">Tesla Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Tesla Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Dart Goblin Evolution')">
                 <img src="assets/cards/Card_Dart_Goblin_evolution_01.png" alt="Dart Goblin Evolution" />
                 <div class="card-placeholder">Dart Goblin Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Dart Goblin Evolution')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Three Musketeers')">
                 <img src="assets/cards/Card_Three_Musketeers.png" alt="Three Musketeers Card" />
                 <div class="card-placeholder">Three Musketeers</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Three Musketeers')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Electro Wizard')">
                 <img src="assets/cards/Card_Electro_Wizard.png" alt="Electro Wizard Card" />
                 <div class="card-placeholder">Electro Wizard</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Electro Wizard')">Info</button>
             </div>
-            <div class="card">
+
+            <div class="card" onclick="addCard('Void')">
                 <img src="assets/cards/Card_Void.png" alt="Void Card" />
                 <div class="card-placeholder">Void</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Void')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Fireball')">
                 <img src="assets/cards/Card_Fireball.png" alt="Fireball Card" />
                 <div class="card-placeholder">Fireball</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Fireball')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Zap Evolution')">
                 <img src="assets/cards/Card_Zap_Evolution.png" alt="Zap Evolution Card" />
                 <div class="card-placeholder">Zap Evolution</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Zap Evolution')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Goblin Demolisher')">
                 <img src="assets/cards/Card_Goblin_Demolisher.png" alt="Goblin Demolisher Card" />
                 <div class="card-placeholder">Goblin Demolisher</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Goblin Demolisher')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Executioner Evolution')">
                 <img src="assets/cards/Executioner_evolution_card.png" alt="Executioner Evolution Card" />
                 <div class="card-placeholder">Executioner Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Executioner Evolution')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Golem')">
                 <img src="assets/cards/Card_Golem.png" alt="Golem Card" />
                 <div class="card-placeholder">Golem</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Golem')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Firecracker Evolution')">
                 <img src="assets/cards/card_firecracker_evolution.png" alt="Firecracker Evolution Card" />
                 <div class="card-placeholder">Firecracker Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Firecracker Evolution')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Mega Knight')">
                 <img src="assets/cards/Card_Mega_Knight.png" alt="Mega Knight Card" />
                 <div class="card-placeholder">Mega Knight</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Mega Knight')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Royal Giant Evolution')">
                 <img src="assets/cards/card_royal_giant_evolution.png" alt="Royal Giant Evolution Card" />
                 <div class="card-placeholder">Royal Giant Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Royal Giant Evolution')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Miner')">
                 <img src="assets/cards/Card_Miner.png" alt="Miner Card" />
                 <div class="card-placeholder">Miner</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Miner')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Skeletons Evolution')">
                 <img src="assets/cards/card_skeletons_evolution.png" alt="Skeletons Evolution Card" />
                 <div class="card-placeholder">Skeletons Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Skeletons Evolution')">Info</button>
             </div>
-            <div class="card">
+            <div class="card" onclick="addCard('Mother Witch')">
                 <img src="assets/cards/Card_Mother_Witch.png" alt="Mother Witch Card" />
                 <div class="card-placeholder">Mother Witch</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Mother Witch')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Archer Queen')">
+                <img src="assets/cards/Archer_Queen.png" alt="Archer Queen Card" />
+                <div class="card-placeholder">Archer Queen</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Archer Queen')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Ice Wizard')"><img src="assets/cards/Card_Ice_Wizard.png"
+                    alt="Ice Wizard Card" />
+                <div class="card-placeholder">Ice Wizard</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Ice Wizard')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Archer Evolution')"><img src="assets/cards/Card_Archer_evolution.png"
+                    alt="Archer Evolution Card" />
+                <div class="card-placeholder">Archer Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Archer Evolution')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Bomb Tower')"><img src="assets/cards/Card_Bomb_Tower.png"
+                    alt="Bomb Tower Card" />
+                <div class="card-placeholder">Bomb Tower</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Bomb Tower')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Mini PEKKA Super')"><img src="assets/cards/Card_Mini_PEKKA_Super.png"
+                    alt="Mini PEKKA Super Card" />
+                <div class="card-placeholder">Mini PEKKA Super</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Mini PEKKA Super')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Minion Horde')"><img src="assets/cards/Card_Minion_Horde.png"
+                    alt="Minion Horde Card" />
+                <div class="card-placeholder">Minion Horde</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Minion Horde')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Monk')"><img src="assets/cards/Card_Monk.png" alt="Monk Card" />
+                <div class="card-placeholder">Monk</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Monk')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Cannoneer')"><img src="assets/cards/Card_Cannoneer.png"
+                    alt="Cannoneer Card" />
+                <div class="card-placeholder">Cannoneer</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Cannoneer')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Dagger Duchess')"><img
+                    src="assets/cards/Card_Dagger_Duchess_Tower_Troop.png" alt="Dagger Duchess Card" />
+                <div class="card-placeholder">Dagger Duchess</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Dagger Duchess')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Night Witch')"><img src="assets/cards/Card_Night_Witch.png"
+                    alt="Night Witch Card" />
+                <div class="card-placeholder">Night Witch</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Night Witch')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Poison')"><img src="assets/cards/Card_Poison.png" alt="Poison Card" />
+                <div class="card-placeholder">Poison</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Poison')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Earthquake')"><img src="assets/cards/Card_Earthquake.png"
+                    alt="Earthquake Card" />
+                <div class="card-placeholder">Earthquake</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Earthquake')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Electro Spirit')"><img src="assets/cards/Card_Electro_Sprit.png"
+                    alt="Electro Spirit Card" />
+                <div class="card-placeholder">Electro Spirit</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Electro Spirit')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Princess Tower Troop')"><img
+                    src="assets/cards/Card_Princess_Tower_Troop.png" alt="Princess Tower Troop Card" />
+                <div class="card-placeholder">Princess Tower Troop</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Princess Tower Troop')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Rage')"><img src="assets/cards/Card_Rage.png" alt="Rage Card" />
+                <div class="card-placeholder">Rage</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Rage')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Royal Delivery')"><img src="assets/cards/Card_Royal_Delivery.png"
+                    alt="Royal Delivery Card" />
+                <div class="card-placeholder">Royal Delivery</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Royal Delivery')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Elixir Collector')"><img src="assets/cards/Card_Elixir_Collector.png"
+                    alt="Elixir Collector Card" />
+                <div class="card-placeholder">Elixir Collector</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Elixir Collector')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('The Log')"><img src="assets/cards/Card_The_Log.png"
+                    alt="The Log Card" />
+                <div class="card-placeholder">The Log</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('The Log')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Tornado')"><img src="assets/cards/Card_Tornado.png"
+                    alt="Tornado Card" />
+                <div class="card-placeholder">Tornado</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Tornado')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Valkyrie Evolution')"><img
+                    src="assets/cards/Card_Valkyrie_Evolution_Frame_01.png" alt="Valkyrie Evolution Card" />
+                <div class="card-placeholder">Valkyrie Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Valkyrie Evolution')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Guards')"><img src="assets/cards/Card_Giards.png" alt="Guards Card" />
+                <div class="card-placeholder">Guards</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Guards')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Goblin Barrel')"><img src="assets/cards/Card_Goblin_Barrel.png"
+                    alt="Goblin Barrel Card" />
+                <div class="card-placeholder">Goblin Barrel</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Goblin Barrel')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Goblin Gang')"><img src="assets/cards/Card_Goblin_Gang.png"
+                    alt="Goblin Gang Card" />
+                <div class="card-placeholder">Goblin Gang</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Goblin Gang')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Goblinstein')"><img src="assets/cards/Card_Goblinstein.png"
+                    alt="Goblinstein Card" />
+                <div class="card-placeholder">Goblinstein</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Goblinstein')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Hog Rider')"><img src="assets/cards/Card_Hog_Rider.png"
+                    alt="Hog Rider Card" />
+                <div class="card-placeholder">Hog Rider</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Hog Rider')">Info</button>
+            </div>
+            <div class="card"><img src="assets/cards/Card_Hunter_Evolution_01.png" alt="Hunter Evolution Card" />
+                <div class="card-placeholder">Hunter Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Hunter Evolution')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Ice Golem')"><img src="assets/cards/Card_Ice_Golem.png"
+                    alt="Ice Golem Card" />
+                <div class="card-placeholder">Ice Golem</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Ice Golem')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Ice Spirit')"><img src="assets/cards/Card_Ice_Spirit.png"
+                    alt="Ice Spirit Card" />
+                <div class="card-placeholder">Ice Spirit</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Ice Spirit')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Ice Spirit Evolution')"><img
+                    src="assets/cards/Card_Ice_Spirit_Evolution.png" alt="Ice Spirit Evolution Card" />
+                <div class="card-placeholder">Ice Spirit Evolution</div>
+                <button class="info-btn"
+                    onclick="event.stopPropagation(); showCardInfo('Ice Spirit Evolution')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Fisherman')"><img src="assets/cards/Card_Fisherman.png"
+                    alt="Fisherman Card" />
+                <div class="card-placeholder">Fisherman</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Fisherman')">Info</button>
+            </div>
+            <div class="card" onclick="addCard('Little Prince')"><img src="assets/cards/Little_Prince_card.png"
+                    alt="Little Prince Card" />
+                <div class="card-placeholder">Little Prince</div>
+                <button class="info-btn" onclick="event.stopPropagation(); showCardInfo('Little Prince')">Info</button>
+            </div>
+        </div>
+        <div id="cardModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2 id="cardTitle"></h2>
+                <p><strong>Health:</strong> <span id="cardHealth"></span></p>
+                <p><strong>Damage:</strong> <span id="cardDamage"></span></p>
+                <p><strong>Speed:</strong> <span id="cardSpeed"></span></p>
             </div>
         </div>
     </div>
@@ -745,6 +1017,88 @@
             navLinks.classList.toggle('active');
             hamburger.classList.toggle('toggle');
         }
+
+        function showCardInfo(cardName) {
+            const cardStats = {
+                'Bats Evolution': { health: 300, damage: 50, speed: 1.2 },
+                'Musketeer Evolution': { health: 500, damage: 100, speed: 1.5 },
+                'Bomber Evolution': { health: 400, damage: 150, speed: 1.0 },
+                'Rocket': { health: 0, damage: 1000, speed: 2.0 },
+                'Cannon Evolution': { health: 1500, damage: 200, speed: 1.0 },
+                'Tesla Evolution': { health: 800, damage: 250, speed: 1.1 },
+                'Dart Goblin Evolution': { health: 200, damage: 75, speed: 1.3 },
+                'Three Musketeers': { health: 300, damage: 150, speed: 1.6 },
+                'Electro Wizard': { health: 600, damage: 120, speed: 1.2 },
+                'Void': { health: 1000, damage: 250, speed: 1.5 },
+                'Fireball': { health: 0, damage: 700, speed: 2.0 },
+                'Zap Evolution': { health: 0, damage: 300, speed: 1.8 },
+                'Goblin Demolisher': { health: 700, damage: 180, speed: 1.4 },
+                'Executioner Evolution': { health: 900, damage: 250, speed: 1.1 },
+                'Golem': { health: 4200, damage: 300, speed: 0.6 },
+                'Firecracker Evolution': { health: 350, damage: 170, speed: 1.3 },
+                'Mega Knight': { health: 3300, damage: 310, speed: 0.8 },
+                'Royal Giant Evolution': { health: 3600, damage: 290, speed: 0.9 },
+                'Miner': { health: 1000, damage: 160, speed: 1.2 },
+                'Skeletons Evolution': { health: 100, damage: 35, speed: 1.5 },
+                'Mother Witch': { health: 750, damage: 140, speed: 1.2 },
+                'Archer Queen': { health: 1200, damage: 230, speed: 1.1 },
+                'Ice Wizard': { health: 800, damage: 120, speed: 1.1 },
+                'Archer Evolution': { health: 300, damage: 90, speed: 1.5 },
+                'Bomb Tower': { health: 1600, damage: 200, speed: 1.0 },
+                'Mini PEKKA Super': { health: 1800, damage: 500, speed: 0.9 },
+                'Minion Horde': { health: 200 * 6, damage: 100 * 6, speed: 1.6 },
+                'Monk': { health: 1800, damage: 220, speed: 1.0 },
+                'Cannoneer': { health: 1000, damage: 210, speed: 1.2 },
+                'Dagger Duchess': { health: 700, damage: 130, speed: 1.5 },
+                'Night Witch': { health: 1200, damage: 190, speed: 1.0 },
+                'Poison': { health: 0, damage: 600, speed: 2.5 },
+                'Earthquake': { health: 0, damage: 550, speed: 2.3 },
+                'Electro Spirit': { health: 250, damage: 100, speed: 2.0 },
+                'Princess Tower Troop': { health: 850, damage: 160, speed: 1.2 },
+                'Rage': { health: 0, damage: 0, speed: 0 }, // Buff spell
+                'Royal Delivery': { health: 0, damage: 300, speed: 2.2 },
+                'Elixir Collector': { health: 1200, damage: 0, speed: 0 },
+                'The Log': { health: 0, damage: 300, speed: 2.4 },
+                'Tornado': { health: 0, damage: 450, speed: 2.0 },
+                'Valkyrie Evolution': { health: 1600, damage: 280, speed: 1.1 },
+                'Guards': { health: 250 * 3, damage: 90 * 3, speed: 1.5 },
+                'Goblin Barrel': { health: 0, damage: 0, speed: 2.0 }, // Spawns troops
+                'Goblin Gang': { health: 200 * 6, damage: 80 * 6, speed: 1.5 },
+                'Goblinstein': { health: 1000, damage: 200, speed: 1.3 },
+                'Hog Rider': { health: 1600, damage: 300, speed: 1.6 },
+                'Hunter Evolution': { health: 1400, damage: 450, speed: 1.0 },
+                'Ice Golem': { health: 1100, damage: 100, speed: 1.0 },
+                'Ice Spirit': { health: 250, damage: 50, speed: 2.0 },
+                'Ice Spirit Evolution': { health: 300, damage: 75, speed: 2.0 },
+                'Fisherman': { health: 1200, damage: 180, speed: 1.1 },
+                'Little Prince': { health: 1100, damage: 200, speed: 1.3 },
+            };
+
+            const stats = cardStats[cardName];
+
+            if (stats) {
+                document.getElementById('cardTitle').textContent = cardName;
+                document.getElementById('cardHealth').textContent = stats.health;
+                document.getElementById('cardDamage').textContent = stats.damage;
+                document.getElementById('cardSpeed').textContent = stats.speed;
+                document.getElementById('cardModal').style.display = 'flex';
+            } else {
+                alert('Card stats not found!');
+            }
+        }
+
+        // Close modal on click
+        document.querySelector('.close-button').addEventListener('click', () => {
+            document.getElementById('cardModal').style.display = 'none';
+        });
+
+        // Close modal on outside click
+        window.addEventListener('click', e => {
+            const modal = document.getElementById('cardModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
     </script>
 
 </body>
