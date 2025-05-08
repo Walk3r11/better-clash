@@ -37,13 +37,16 @@
         };
 
         onAuthStateChanged(auth, (user) => {
-            if (!user) return;
+            if (!user) {
+                window.location.replace("/login");
+                return;
+            }
 
             const logRef = ref(db, 'battleLog');
             const logList = document.getElementById('log-entries');
 
             onValue(logRef, (snapshot) => {
-                logList.innerHTML = '';
+                logList.innerHTML = 'No recent battles';
 
                 document.body.style.display = "block";
 
@@ -61,24 +64,6 @@
                 const userNameElement = document.createElement('span');
                 userNameElement.textContent = ` (${userName})`;
                 document.querySelector('.nav-logo').appendChild(userNameElement);
-
-                const logs = [];
-                snapshot.forEach(child => {
-                    const data = child.val();
-                    if (data.user === user.email) {
-                        logs.push(data.message);
-                    }
-                });
-
-                if (logs.length === 0) {
-                    logList.innerHTML = '<li>No recent battles</li>';
-                } else {
-                    logs.reverse().forEach(msg => {
-                        const li = document.createElement('li');
-                        li.textContent = msg;
-                        logList.appendChild(li);
-                    });
-                }
             });
         });
     </script>

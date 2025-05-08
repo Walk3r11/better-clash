@@ -61,8 +61,20 @@
                 const userData = snapshot.val();
                 if (userData && userData.gems) {
                     const userGems = userData.gems;
-                    const buyButtons = document.querySelectorAll('.buy-button');
+                    const userInventory = userData.inventory || [];  // Make sure inventory exists
     
+                    // Get all shop items first
+                    const shopItems = document.querySelectorAll('.shop-item');
+    
+                    // Hide items that the user already owns
+                    shopItems.forEach(shopItem => {
+                        const itemName = shopItem.getAttribute('data-name');
+                        if (userInventory.includes(itemName)) {
+                            shopItem.style.display = 'none';  // Hide the owned items before they are displayed
+                        }
+                    });
+    
+                    const buyButtons = document.querySelectorAll('.buy-button');
                     buyButtons.forEach(button => {
                         button.addEventListener("click", () => {
                             const itemName = button.closest('.modal-content').querySelector('#modal-title').textContent;

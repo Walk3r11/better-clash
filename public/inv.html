@@ -37,14 +37,33 @@
         };
 
         onAuthStateChanged(auth, (user) => {
-            if (!user) return;
-            
+            if (!user) {
+                return window.location.replace("/login");
+            }
+
+            document.body.style.display = "block";
+
+            const logoutLink = document.querySelector('.logout');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', e => {
+                    e.preventDefault();
+                    signOut(auth).then(() => window.location.replace("/login"));
+                });
+            }
+
             const emailPrefix = user.email.split('@')[0];
             const userName = emailToName[emailPrefix] || 'Unknown User';
 
             const userNameElement = document.createElement('span');
             userNameElement.textContent = ` (${userName})`;
             document.querySelector('.nav-logo').appendChild(userNameElement);
+
+            function resetSessionTimeout() {
+                lastActiveTime = Date.now();
+            }
+
+            document.addEventListener('click', resetSessionTimeout);
+            document.addEventListener('keypress', resetSessionTimeout);
 
             const db = getDatabase();
             const userRef = ref(db, 'users/' + user.uid);
@@ -57,18 +76,68 @@
                 if (data && data.inventory && Array.isArray(data.inventory)) {
                     data.inventory.forEach(item => {
                         const itemDiv = document.createElement('div');
-                        itemDiv.textContent = item;
                         itemDiv.style.padding = "10px";
                         itemDiv.style.margin = "10px";
                         itemDiv.style.background = "rgba(255,255,255,0.1)";
                         itemDiv.style.borderRadius = "8px";
+                        itemDiv.style.display = "flex";
+                        itemDiv.style.flexDirection = "column";
+                        itemDiv.style.alignItems = "center";
+
+                        // Try to match item name to its corresponding image path
+                        let imagePath = "";
+
+                        if (["Destruction", "Red Skies", "Skeleton Witch"].includes(item)) {
+                            imagePath = `assets/banners/SkeletonWitchEvoBG.png`;
+                        } else if (["Goblin Queen Cry", "Thumbs Down", "King Cry", "Squad Baby", "Nope", "Yo Chill"].includes(item)) {
+                            const emoteMap = {
+                                "Goblin Queen Cry": "Emote_GoblinQueenCry",
+                                "Thumbs Down": "Emote_GoblinQueenThumbsDown",
+                                "King Cry": "Emote_King_ShareCry",
+                                "Squad Baby": "Emote_King_SquadBaby",
+                                "Nope": "Emote_Nope",
+                                "Yo Chill": "Emote_Princess_YoChill"
+                            };
+                            imagePath = `assets/emotes/${emoteMap[item]}.png`;
+                        } else {
+                            const mapMap = {
+                                "Silent Sanctuary": "Silent_Sanctuary_Arena",
+                                "Spooky Town": "Spooky_Town_Arena",
+                                "Goblin Bonanza": "Arena_GoblinBonanza_Diorama",
+                                "Gravekeeper's Daughter": "GravekeepersDaughter_Diorama",
+                                "Executioner's Kitchen": "Executioners_Kitchen_Arena",
+                                "Royal Crypt": "Royal_Crypt_Arena",
+                                "Rune Giant": "Arena_RuneGiant_Diorama",
+                                "Dragon Spa": "Dragon_Spa_Arena",
+                                "Pekka's Playhouse": "pekkas_Playhouse_Arena"
+                            };
+                            if (mapMap[item]) {
+                                imagePath = `assets/maps/${mapMap[item]}.png`;
+                            }
+                        }
+
+                        // Add image and name to itemDiv
+                        if (imagePath) {
+                            const img = document.createElement('img');
+                            img.src = imagePath;
+                            img.alt = item;
+                            img.style.width = "120px";
+                            img.style.borderRadius = "6px";
+                            img.style.marginBottom = "10px";
+                            itemDiv.appendChild(img);
+                        }
+
+                        const name = document.createElement('div');
+                        name.textContent = item;
+                        name.style.fontSize = "16px";
+                        itemDiv.appendChild(name);
+
                         inventoryList.appendChild(itemDiv);
                     });
                 } else {
                     inventoryList.textContent = "Your inventory is empty.";
                 }
             });
-
         });
     </script>
 
