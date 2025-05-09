@@ -54,10 +54,6 @@
             const emailPrefix = user.email.split('@')[0];
             const userName = emailToName[emailPrefix] || 'Unknown User';
 
-            const userNameElement = document.createElement('span');
-            userNameElement.textContent = ` (${userName})`;
-            document.querySelector('.nav-logo').appendChild(userNameElement);
-
             function resetSessionTimeout() {
                 lastActiveTime = Date.now();
             }
@@ -67,6 +63,17 @@
 
             const db = getDatabase();
             const userRef = ref(db, 'users/' + user.uid);
+
+            const userNameElement = document.createElement('span');
+            userNameElement.id = "user-info";
+            userNameElement.style.marginLeft = "10px";
+            document.querySelector('.nav-logo').appendChild(userNameElement);
+
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                const userGems = userData?.gems || 0;
+                userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+            });
 
             onValue(userRef, (snapshot) => {
                 const data = snapshot.val();
@@ -78,6 +85,7 @@
                         const itemDiv = document.createElement('div');
                         itemDiv.style.padding = "10px";
                         itemDiv.style.margin = "10px";
+                        itemDiv.style.width = "350px";
                         itemDiv.style.background = "rgba(255,255,255,0.1)";
                         itemDiv.style.borderRadius = "8px";
                         itemDiv.style.display = "flex";
@@ -88,7 +96,12 @@
                         let imagePath = "";
 
                         if (["Destruction", "Red Skies", "Skeleton Witch"].includes(item)) {
-                            imagePath = `assets/banners/SkeletonWitchEvoBG.png`;
+                            const bannerMap = {
+                                "Destruction": "Banner_Destruction_BG",
+                                "Red Skies": "Banner_RedSkies",
+                                "Skeleton Witch": "SkeletonWitchEvoBG"
+                            };
+                            imagePath = `assets/banners/${bannerMap[item]}.png`;
                         } else if (["Goblin Queen Cry", "Thumbs Down", "King Cry", "Squad Baby", "Nope", "Yo Chill"].includes(item)) {
                             const emoteMap = {
                                 "Goblin Queen Cry": "Emote_GoblinQueenCry",
@@ -117,25 +130,91 @@
                         }
 
                         // Add image and name to itemDiv
+                        // Add image
                         if (imagePath) {
                             const img = document.createElement('img');
                             img.src = imagePath;
                             img.alt = item;
-                            img.style.width = "120px";
+                            img.style.width = "300px";
+                            img.style.height = "auto";
                             img.style.borderRadius = "6px";
                             img.style.marginBottom = "10px";
                             itemDiv.appendChild(img);
                         }
 
+                        // Add item name
                         const name = document.createElement('div');
                         name.textContent = item;
                         name.style.fontSize = "16px";
                         itemDiv.appendChild(name);
 
+                        // Prices (mock, update as needed)
+                        const priceMap = {
+                            "Destruction": 300,
+                            "Red Skies": 300,
+                            "Skeleton Witch": 300,
+                            "Goblin Queen Cry": 150,
+                            "Thumbs Down": 150,
+                            "King Cry": 150,
+                            "Squad Baby": 150,
+                            "Nope": 150,
+                            "Yo Chill": 150,
+                            "Silent Sanctuary": 500,
+                            "Spooky Town": 500,
+                            "Goblin Bonanza": 500,
+                            "Gravekeeper's Daughter": 500,
+                            "Executioner's Kitchen": 500,
+                            "Royal Crypt": 500,
+                            "Rune Giant": 500,
+                            "Dragon Spa": 500,
+                            "Pekka's Playhouse": 500
+                        };
+
+                        // Add refund button
+                        const refundBtn = document.createElement('button');
+                        refundBtn.textContent = `Refund (${priceMap[item] || 0} coins)`;
+                        refundBtn.style.marginTop = "10px";
+                        refundBtn.style.padding = "10px 20px";
+                        refundBtn.style.borderRadius = "6px";
+                        refundBtn.style.border = "none";
+                        refundBtn.style.background = "#f44336";
+                        refundBtn.style.color = "white";
+                        refundBtn.style.cursor = "pointer";
+                        refundBtn.style.fontSize = "16px";
+                        refundBtn.onclick = () => {
+                            // Remove item and update currency
+                            const userInventory = data.inventory.filter(invItem => invItem !== item);
+                            const updatedGems = (data.gems || 0) + (priceMap[item] || 0);
+
+                            // Save to DB
+                            import("https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js").then(({ update }) => {
+                                update(userRef, {
+                                    inventory: userInventory,
+                                    gems: updatedGems
+                                });
+                            });
+                        };
+
+                        itemDiv.appendChild(refundBtn);
                         inventoryList.appendChild(itemDiv);
                     });
                 } else {
-                    inventoryList.textContent = "Your inventory is empty.";
+                    const noItems = document.createElement('div');
+                    noItems.textContent = "No items in inventory.";
+                    noItems.style.fontSize = "20px";
+                    noItems.style.textAlign = "center";
+                    noItems.style.padding = "20px";
+                    noItems.style.background = "rgba(255,255,255,0.1)";
+                    noItems.style.borderRadius = "15px";
+                    noItems.style.width = "350px";
+                    noItems.style.margin = "auto";
+                    noItems.style.color = "white";
+                    noItems.style.fontWeight = "bold";
+                    noItems.style.boxShadow = "0 4px 30px rgba(0, 0, 0, 0.6)";
+                    noItems.style.transition = "all 0.3s ease";
+                    noItems.style.transform = "scale(1.05)";
+                    noItems.style.opacity = "0.8";
+                    inventoryList.appendChild(noItems);
                 }
             });
         });

@@ -54,9 +54,18 @@
             const emailPrefix = user.email.split('@')[0];
             const userName = emailToName[emailPrefix] || 'Unknown User';
 
+            const userRef = ref(db, 'users/' + user.uid);
+
             const userNameElement = document.createElement('span');
-            userNameElement.textContent = ` (${userName})`;
+            userNameElement.id = "user-info";
+            userNameElement.style.marginLeft = "10px";
             document.querySelector('.nav-logo').appendChild(userNameElement);
+
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                const userGems = userData?.gems || 0;
+                userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+            });
 
             function resetSessionTimeout() {
                 lastActiveTime = Date.now();

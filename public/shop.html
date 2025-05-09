@@ -11,7 +11,7 @@
         import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    
+
         const firebaseConfig = {
             apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
             authDomain: "better-clash-136da.firebaseapp.com",
@@ -22,26 +22,26 @@
             appId: "1:586663576851:web:436c37162a3fa5f32086e6",
             measurementId: "G-KZSXJLJX6N"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-    
+
         const emailToName = {
             'gagas': 'gagas slut',
             'pederakis': 'pederakis manafakis',
         };
-    
+
         onAuthStateChanged(auth, user => {
             if (!user) {
                 window.location.replace("/login");
                 return;
             }
-    
+
             document.body.style.display = "block";
-    
+
             const userRef = ref(db, 'users/' + user.uid);
-    
+
             const logoutLink = document.querySelector('.logout');
             if (logoutLink) {
                 logoutLink.addEventListener('click', e => {
@@ -49,23 +49,93 @@
                     signOut(auth).then(() => window.location.replace("/login"));
                 });
             }
-    
+
+            // Inside onAuthStateChanged(auth, (user) => { ... })
+            const dropButton = document.getElementById('random-drop');
+            const resultDiv = document.getElementById('drop-result');
+            const resultImage = document.getElementById('drop-image');
+
+            dropButton.addEventListener('click', () => {
+                const userRef = ref(db, 'users/' + user.uid);
+
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    const now = Date.now();
+                    const lastDropTime = userData?.lastDropTime || 0;
+                    const twentyFourHours = 24 * 60 * 60 * 1000;
+
+                    if (now - lastDropTime < twentyFourHours) {
+                        const hoursLeft = Math.ceil((twentyFourHours - (now - lastDropTime)) / (60 * 60 * 1000));
+                        resultDiv.textContent = `Come back in ${hoursLeft} hour(s) for your next drop!`;
+                        resultImage.style.display = 'none';
+                        return;
+                    }
+
+                    const dropData = {
+                        yellow: { values: [20, 25, 30, 35, 40], image: 'assets/random-drop/Yellow.png' },
+                        blue: { values: [40, 45, 50, 55, 60], image: 'assets/random-drop/Blue.png' },
+                        purple: { values: [60, 70, 80, 90, 100], image: 'assets/random-drop/Purple.png' }
+                    };
+
+                    const colors = Object.keys(dropData);
+                    const chosenColor = colors[Math.floor(Math.random() * colors.length)];
+                    const value = dropData[chosenColor].values[Math.floor(Math.random() * dropData[chosenColor].values.length)];
+
+                    // Set modal values
+                    const modal = document.querySelector('.modal');
+                    const modalTitle = modal.querySelector('#modal-title');
+                    const modalPrice = modal.querySelector('#modal-price');
+                    const modalImage = modal.querySelector('.modal-image img');
+
+                    modalTitle.textContent = `${chosenColor.toUpperCase()} Drop`;
+                    modalPrice.textContent = value;
+                    modalImage.src = dropData[chosenColor].image;
+
+                    // Hide buy button for random drop (optional, if not purchasable)
+                    modal.querySelector('.buy-button').style.display = 'none';
+
+                    // Show the modal
+                    modal.classList.remove('hidden');
+
+                    // Immediately update the drop button to show it's claimed
+                    dropButton.textContent = "CLAIMED";
+                    dropButton.disabled = true;
+                    dropButton.classList.add("claimed");
+                    dropButton.style.backgroundColor = "gray";
+
+                    // Save gem value and timestamp to Firebase
+                    const newGems = (userData?.gems || 0) + value;
+                    update(userRef, {
+                        gems: newGems,
+                        lastDropTime: now
+                    });
+                }, { onlyOnce: true }); // Ensures the listener runs only once on click
+            });
+
+
             const emailPrefix = user.email.split('@')[0];
             const userName = emailToName[emailPrefix] || 'Unknown User';
-    
+
             const userNameElement = document.createElement('span');
-            userNameElement.textContent = ` (${userName})`;
+            userNameElement.id = "user-info";
+            userNameElement.style.marginLeft = "10px";
             document.querySelector('.nav-logo').appendChild(userNameElement);
-    
+
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                const userGems = userData?.gems || 0;
+                userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+            });
+
             onValue(userRef, (snapshot) => {
                 const userData = snapshot.val();
                 if (userData && userData.gems) {
                     const userGems = userData.gems;
                     const userInventory = userData.inventory || [];  // Make sure inventory exists
-    
+
                     // Get all shop items first
                     const shopItems = document.querySelectorAll('.shop-item');
-    
+
                     // Hide items that the user already owns
                     shopItems.forEach(shopItem => {
                         const itemName = shopItem.getAttribute('data-name');
@@ -73,18 +143,18 @@
                             shopItem.style.display = 'none';  // Hide the owned items before they are displayed
                         }
                     });
-    
+
                     const buyButtons = document.querySelectorAll('.buy-button');
                     buyButtons.forEach(button => {
                         button.addEventListener("click", () => {
                             const itemName = button.closest('.modal-content').querySelector('#modal-title').textContent;
                             const itemPrice = parseInt(button.closest('.modal-content').querySelector('#modal-price').textContent);
-    
+
                             if (userGems >= itemPrice) {
                                 // Deduct gems and add item to inventory
                                 const updatedGems = userGems - itemPrice;
                                 const updatedInventory = userData.inventory ? [...userData.inventory, itemName] : [itemName];
-    
+
                                 // Update user gems and inventory in the database
                                 update(userRef, {
                                     gems: updatedGems,
@@ -92,10 +162,10 @@
                                 }).then(() => {
                                     alert(`You bought "${itemName}" for ${itemPrice} gems!`);
                                     modal.classList.add("hidden");
-    
+
                                     // Find the corresponding shop item based on its data-name
                                     const shopItem = document.querySelector(`.shop-item[data-name="${itemName}"]`);
-    
+
                                     if (shopItem) {
                                         // Hide the purchased item from the shop
                                         shopItem.style.display = 'none';
@@ -114,7 +184,7 @@
             });
         });
     </script>
-    
+
     <!-- Styles -->
     <style>
         * {
@@ -588,10 +658,15 @@
             </div>
         </section>
 
-        <section class="daily-drop">
-            <h2>🎁 Daily Drop</h2>
-            <div class="daily-item">✨ Surprise Item! Come back daily.</div>
+        <section class="shop-section">
+            <h2>Random Drop</h2>
+            <div id="random-drop" class="daily-drop" style="cursor:pointer;">
+                <h3>Click here for a random drop!</h3>
+                <div id="drop-result" class="daily-item"></div>
+                <img id="drop-image" src="" style="display:none; margin-top: 10px; max-width: 100px;" />
+            </div>
         </section>
+
     </div>
     <div id="item-modal" class="modal hidden">
         <div class="modal-content">
