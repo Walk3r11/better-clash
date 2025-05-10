@@ -8,7 +8,7 @@
 
     <!-- Firebase auth check -->
     <script type="module">
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
@@ -72,6 +72,38 @@
                     const userData = snapshot.val();
                     const userGems = userData?.gems || 0;
                     userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+                });
+
+                const chatRef = ref(db, 'chatMessages');
+                const chatMessagesContainer = document.getElementById('chat-messages');
+                const chatForm = document.getElementById('chat-form');
+                const chatInput = document.getElementById('chat-input');
+
+                // Listen for new messages
+                onValue(chatRef, (snapshot) => {
+                    chatMessagesContainer.innerHTML = '';
+                    snapshot.forEach(childSnapshot => {
+                        const msg = childSnapshot.val();
+                        const p = document.createElement('p');
+                        p.textContent = `${msg.sender}: ${msg.text}`;
+                        chatMessagesContainer.appendChild(p);
+                    });
+                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                });
+
+                // Send message
+                chatForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const text = chatInput.value.trim();
+                    if (!text) return;
+
+                    const newMessageRef = ref(db, `chatMessages/${Date.now()}`);
+                    set(newMessageRef, {
+                        sender: userName,
+                        text: text
+                    });
+
+                    chatInput.value = '';
                 });
 
             });
@@ -268,14 +300,26 @@
 
             .main-content {
                 padding: 10px;
+                top: -150px;
             }
 
             .arena {
                 border-radius: 12px;
+                top: -150px;
+            }
+
+            .battle-log {
+                top: -150px;
             }
 
             .arena img {
                 border-radius: 12px;
+            }
+
+            .chat-box {
+                top: 530px;
+                width: 90%;
+                left: 40px;
             }
         }
 
@@ -323,6 +367,61 @@
             color: #eee;
             padding-left: 5px;
         }
+
+        .chat-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .chat-box h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #f9d342;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        #chat-form {
+            display: flex;
+            gap: 6px;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 6px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+        }
+
+        #chat-form button {
+            padding: 6px 10px;
+            background-color: #f9d342;
+            color: #222;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -358,7 +457,14 @@
             </div>
         </div>
     </div>
-
+    <div class="chat-box" id="chat-box">
+        <h3>Chat</h3>
+        <div class="chat-messages" id="chat-messages"></div>
+        <form id="chat-form">
+            <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
     <script>
         function toggleMenu() {
             const navLinks = document.querySelector('.nav-links');
