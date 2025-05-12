@@ -8,7 +8,7 @@
 
     <!-- Firebase auth check -->
     <script type="module">
-        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
@@ -17,7 +17,7 @@
             authDomain: "better-clash-136da.firebaseapp.com",
             projectId: "better-clash-136da",
             databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
-            storageBucket: "better-clash-136da.firebasestorage.app",
+            storageBucket: "better-clash-136da.appspot.com",
             messagingSenderId: "586663576851",
             appId: "1:586663576851:web:436c37162a3fa5f32086e6",
             measurementId: "G-KZSXJLJX6N"
@@ -27,14 +27,113 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        let lastActiveTime = Date.now();  // Track the last active time
-        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
-
-        // Map emails to custom user names
         const emailToName = {
             'gagas': 'gagas slut',
             'pederakis': 'pederakis manafakis',
         };
+
+        let currentUserId = null;
+
+        function renderClans(clans) {
+            const list = document.getElementById("clans");
+            list.innerHTML = ""; // Clear existing clans
+
+            if (!clans) {
+                list.innerHTML = "<li>No clans yet!</li>";
+                return;
+            }
+
+            Object.entries(clans).forEach(([key, clan]) => {
+                const div = document.createElement("div");
+                div.className = "clan-card-inner";
+                div.style.cursor = "pointer";
+
+                div.innerHTML = `
+        <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" class="clan-icon" alt="Clan Icon" />
+        <div class="clan-info">
+            <h3>${clan.name}</h3>
+            <p>${clan.description}</p>
+            <span class="member-count">${Object.keys(clan.members || {}).length} members</span>
+        </div>
+    `;
+
+                list.appendChild(div);
+            });
+        }
+
+        function createClan() {
+            const name = document.getElementById("clan-name").value.trim();
+            const description = document.getElementById("clan-desc").value.trim();
+
+            if (!name || !description || !currentUserId) {
+                alert("Please enter valid name & description.");
+                return;
+            }
+
+            const newClanRef = push(ref(db, "clans"));
+            const clanData = {
+                name,
+                description,
+                createdBy: currentUserId,
+                members: { [currentUserId]: true }
+            };
+
+            set(newClanRef, clanData)
+                .then(() => {
+                    update(ref(db, `users/${currentUserId}`), {
+                        clanId: newClanRef.key
+                    });
+
+                    alert("Clan created and joined!");
+                });
+        }
+
+        // 👇 Add this
+        window.createClan = createClan;
+
+
+        function showMyClan(clanId) {
+            const clanRef = ref(db, `clans/${clanId}`);
+            onValue(clanRef, async (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                const container = document.getElementById("my-clan-info");
+                const members = Object.keys(data.members || {});
+
+                // Fetch member names dynamically from the database
+                const memberNamesPromises = members.map(uid =>
+                    new Promise((resolve) => {
+                        const userRef = ref(db, `users/${uid}/name`); // Fetch name from users/{uid}/name
+                        onValue(userRef, (snap) => {
+                            const userName = snap.val();
+                            resolve(userName || "Unknown");
+                        }, { onlyOnce: true });
+                    })
+                );
+
+                const memberNames = await Promise.all(memberNamesPromises);
+
+                container.innerHTML = `
+            <div class="clan-card">
+                <div class="clan-card-header">
+                    <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Clan Icon" class="clan-icon" />
+                    <div>
+                        <h2 class="clan-name">${data.name}</h2>
+                        <p class="clan-description">${data.description}</p>
+                    </div>
+                </div>
+                <div class="clan-members">
+                    <h3>Members (${members.length}):</h3>
+                    <ul class="clan-members-list">
+                        ${memberNames.map(name => `<li>${name}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+            });
+        }
+
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -42,34 +141,45 @@
                 return;
             }
 
+            document.body.style.display = "block";
 
-            onValue(logRef, (snapshot) => {
+            const userRef = ref(db, 'users/' + user.uid);
 
-                document.body.style.display = "block";
-
-                const logoutLink = document.querySelector('.logout');
-                if (logoutLink) {
-                    logoutLink.addEventListener('click', e => {
-                        e.preventDefault();
-                        signOut(auth).then(() => window.location.replace("/login"));
-                    });
-                }
-
-                const userRef = ref(db, 'users/' + user.uid);
-
-                const emailPrefix = user.email.split('@')[0];
-                const userName = emailToName[emailPrefix] || 'Unknown User';
-
-                const userNameElement = document.createElement('span');
-                userNameElement.id = "user-info";
-                userNameElement.style.marginLeft = "10px";
-                document.querySelector('.nav-logo').appendChild(userNameElement);
-
-                onValue(userRef, (snapshot) => {
-                    const userData = snapshot.val();
-                    const userGems = userData?.gems || 0;
-                    userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+            const logoutLink = document.querySelector('.logout');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', e => {
+                    e.preventDefault();
+                    signOut(auth).then(() => window.location.replace("/login"));
                 });
+            }
+
+            currentUserId = user.uid;
+
+            const emailPrefix = user.email.split('@')[0];
+            const userName = emailToName[emailPrefix] || 'Unknown User';
+
+            const userNameElement = document.createElement('span');
+            userNameElement.id = "user-info";
+            userNameElement.style.marginLeft = "10px";
+            document.querySelector('.nav-logo').appendChild(userNameElement);
+
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                const userGems = userData?.gems || 0;
+                userNameElement.textContent = `(${userName} - 💎 ${userGems})`;
+            });
+
+            // Fetch all clans
+            onValue(ref(db, "clans"), (snapshot) => {
+                renderClans(snapshot.val());
+            });
+
+            // Fetch user's clan
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData?.clanId) {
+                    showMyClan(userData.clanId);
+                }
             });
         });
     </script>
@@ -228,6 +338,188 @@
                 transform: rotate(45deg) translate(-5px, -6px);
             }
         }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .clan-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .clan-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .clan-card li {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            list-style: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .clan-card li:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .create-clan-form {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+
+        .input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background-color: #f9d342;
+            color: #222;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #f0c200;
+        }
+
+        .my-clan .clan-details {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .clan-card-inner {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .clan-card-inner:hover {
+            transform: scale(1.03);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .clan-icon {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: white;
+            padding: 5px;
+        }
+
+        .clan-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            color: #f9d342;
+        }
+
+        .clan-info p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .member-count {
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        .my-clan .clan-details {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            margin-top: 20px;
+        }
+
+        .my-clan .clan-details ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .my-clan .clan-details li {
+            list-style: disc;
+            margin-bottom: 5px;
+        }
+
+        .clan-card {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            margin-top: 20px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #f0f0f0;
+        }
+
+        .clan-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .clan-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .clan-name {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #fff;
+        }
+
+        .clan-description {
+            font-size: 1rem;
+            color: #ccc;
+            margin: 5px 0 0;
+        }
+
+        .clan-members {
+            margin-top: 15px;
+        }
+
+        .clan-members-list {
+            list-style: disc;
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+
+        .clan-members-list li {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            color: #eee;
+        }
     </style>
 </head>
 
@@ -250,12 +542,39 @@
             <a href="#" class="logout">Log Out</a>
         </div>
     </nav>
+    <main class="container">
+        <section class="clan-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 style="margin: 0;">Clans</h1>
+                <button class="btn" onclick="toggleCreateClanForm()">Create Clan</button>
+            </div>
+            <div class="clan-grid">
+                <ul class="clan-card" id="clans">
+            </div>
+            <!-- Hidden form -->
+            <div id="create-clan-form" class="create-clan-form" style="display: none;">
+                <h2>Create a Clan</h2>
+                <input id="clan-name" class="input" type="text" placeholder="Clan Name">
+                <input id="clan-desc" class="input" type="text" placeholder="Description">
+                <button class="btn" onclick="createClan()">Create</button>
+            </div>
+            <div class="my-clan">
+                <h2>My Clan</h2>
+                <div id="my-clan-info" class="clan-details"></div>
+            </div>
+        </section>
+    </main>
     <script>
         function toggleMenu() {
             const navLinks = document.querySelector('.nav-links');
             const hamburger = document.querySelector('.hamburger');
             navLinks.classList.toggle('active');
             hamburger.classList.toggle('toggle');
+        }
+
+        function toggleCreateClanForm() {
+            const form = document.getElementById('create-clan-form');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
     </script>
 </body>
