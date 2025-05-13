@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -36,30 +37,42 @@
 
         function renderClans(clans) {
             const list = document.getElementById("clans");
-            list.innerHTML = ""; // Clear existing clans
+            list.innerHTML = "";
 
             if (!clans) {
                 list.innerHTML = "<li>No clans yet!</li>";
                 return;
             }
 
-            Object.entries(clans).forEach(([key, clan]) => {
-                const div = document.createElement("div");
-                div.className = "clan-card-inner";
-                div.style.cursor = "pointer";
+            const userRef = ref(db, `users/${currentUserId}`);
 
-                div.innerHTML = `
-        <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" class="clan-icon" alt="Clan Icon" />
-        <div class="clan-info">
-            <h3>${clan.name}</h3>
-            <p>${clan.description}</p>
-            <span class="member-count">${Object.keys(clan.members || {}).length} members</span>
-        </div>
-    `;
+            onValue(userRef, (userSnapshot) => {
+                const userData = userSnapshot.val();
+                const userClanId = userData?.clanId || null;
 
-                list.appendChild(div);
-            });
+                Object.entries(clans).forEach(([clanId, clan]) => {
+                    const div = document.createElement("div");
+                    div.className = "clan-card-inner";
+
+                    const isMember = userClanId === clanId;
+
+                    div.innerHTML = `
+            <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" class="clan-icon" alt="Clan Icon" />
+            <div class="clan-info">
+                <h3>${clan.name}</h3>
+                <p>${clan.description}</p>
+                <span class="member-count">${Object.keys(clan.members || {}).length} members</span><br/>
+                <button class="btn" onclick="${isMember ? `leaveClan('${clanId}')` : `joinClan('${clanId}')`}" ${userClanId && !isMember ? 'disabled' : ''}>
+                    ${isMember ? 'Leave Clan' : (userClanId ? 'Join (Disabled)' : 'Join')}
+                </button>
+            </div>
+        `;
+
+                    list.appendChild(div);
+                });
+            }, { onlyOnce: true });
         }
+
 
         function createClan() {
             const name = document.getElementById("clan-name").value.trim();
@@ -115,25 +128,65 @@
                 const memberNames = await Promise.all(memberNamesPromises);
 
                 container.innerHTML = `
-            <div class="clan-card">
-                <div class="clan-card-header">
-                    <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Clan Icon" class="clan-icon" />
-                    <div>
-                        <h2 class="clan-name">${data.name}</h2>
-                        <p class="clan-description">${data.description}</p>
-                    </div>
-                </div>
-                <div class="clan-members">
-                    <h3>Members (${members.length}):</h3>
-                    <ul class="clan-members-list">
-                        ${memberNames.map(name => `<li>${name}</li>`).join('')}
-                    </ul>
+        <div class="clan-card">
+            <div class="clan-card-header">
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Clan Icon" class="clan-icon" />
+                <div>
+                    <h2 class="clan-name">${data.name}</h2>
+                    <p class="clan-description">${data.description}</p>
                 </div>
             </div>
-        `;
+            <div class="clan-members">
+                <h3>Members (${members.length}):</h3>
+                <ul class="clan-members-list">
+                    ${memberNames.map(name => `<li>${name}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
             });
         }
 
+
+        function joinClan(clanId) {
+            if (!currentUserId) return;
+
+            const userRef = ref(db, `users/${currentUserId}`);
+
+            // Check if user already in a clan
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData?.clanId) {
+                    alert("You must leave your current clan before joining another.");
+                    return;
+                }
+
+                // Add user to clan members
+                const updates = {};
+                updates[`clans/${clanId}/members/${currentUserId}`] = true;
+                updates[`users/${currentUserId}/clanId`] = clanId;
+
+                update(ref(db), updates).then(() => {
+                    alert("Successfully joined the clan!");
+                });
+            }, { onlyOnce: true });
+        }
+
+        function leaveClan(clanId) {
+            if (!currentUserId) return;
+
+            const updates = {};
+            updates[`clans/${clanId}/members/${currentUserId}`] = null;
+            updates[`users/${currentUserId}/clanId`] = null;
+
+            update(ref(db), updates).then(() => {
+                alert("You have left the clan.");
+            });
+        }
+
+        window.createClan = createClan;
+        window.joinClan = joinClan;
+        window.leaveClan = leaveClan;
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
