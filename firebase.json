@@ -23,7 +23,10 @@
       { "source": "/inventory", "destination": "/inventory.html" },
       { "source": "/clan", "destination": "/clan.html" },
       { "source": "/friends", "destination": "/friends.html" },
-      { "source": "/matchmaking", "destination": "/matchmaking.html" }
+      { "source": "/1v1-matchmaking", "destination": "/1v1matchmaking.html" },
+      { "source": "/2v2-matchmaking", "destination": "/2v2matchmaking.html" },
+      { "source": "/solo-match", "destination": "/game/1v1match.html" },
+      { "source": "/duo-match", "destination": "/game/2v2match.html" }
     ]
   },
   "database": {
