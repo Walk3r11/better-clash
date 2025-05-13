@@ -540,6 +540,163 @@
             font-weight: 600;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         }
+
+        /* Centering the select and button container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Styling for the Select dropdown */
+        #friend-selector {
+            width: 200px;
+            /* Make the select smaller */
+            padding: 8px;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #friend-selector:hover {
+            border-color: #f9d342;
+        }
+
+        #friend-selector:focus {
+            outline: none;
+            border-color: #f9d342;
+            box-shadow: 0 0 6px rgba(249, 211, 66, 0.7);
+        }
+
+        /* Styling for the Send Request Button */
+        #send-request-btn {
+            width: 200px;
+            /* Make the button smaller */
+            padding: 10px 16px;
+            background-color: #f9d342;
+            color: #222;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #send-request-btn:hover {
+            background-color: #f4c400;
+            transform: scale(1.05);
+        }
+
+        #send-request-btn:active {
+            background-color: #e6a800;
+            transform: scale(1);
+        }
+
+        #send-request-btn:focus {
+            outline: none;
+            box-shadow: 0 0 4px rgba(249, 211, 66, 0.7);
+        }
+
+        /* Request Status Text */
+        #request-status {
+            font-size: 14px;
+            color: #fff;
+            margin-top: 8px;
+        }
+
+        /* Styling for Pending Friend Requests */
+        #pending-requests {
+            list-style-type: none;
+            padding-left: 0;
+            max-width: 400px;
+            margin-top: 10px;
+        }
+
+        #pending-requests li {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #pending-requests li span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Adding subtle hover effect to pending requests */
+        #pending-requests li:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Styling for Incoming Requests */
+        #incoming-requests {
+            list-style-type: none;
+            padding-left: 0;
+            max-width: 400px;
+            margin-top: 10px;
+        }
+
+        #incoming-requests li {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #incoming-requests li span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #incoming-requests li button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        #incoming-requests li button:hover {
+            background-color: #45a049;
+        }
+
+        #incoming-requests li button:focus {
+            outline: none;
+            box-shadow: 0 0 3px rgba(72, 178, 93, 0.5);
+        }
+
+        @keyframes dropdownAnimation {
+            0% {
+                transform: scaleY(0);
+            }
+
+            100% {
+                transform: scaleY(1);
+            }
+        }
+
+        #friend-selector:focus {
+            animation: dropdownAnimation 0.3s ease-out;
+        }
     </style>
 </head>
 
@@ -568,8 +725,8 @@
 
         <div class="glass-section compact">
             <h3>Add a Friend</h3>
-            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
-                <select id="friend-selector">
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                <select id="friend-selector" style="margin-left: 10px;">
                     <option value="" disabled selected>Select a user</option>
                 </select>
                 <button id="send-request-btn" class="button">Send Request</button>
