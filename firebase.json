@@ -20,8 +20,9 @@
       { "source": "/shop", "destination": "/shop.html" },
       { "source": "/1v1", "destination": "/1v1.html" },
       { "source": "/2v2", "destination": "/2v2.html" },
-      { "source": "/inventory", "destination": "/inv.html" },
-      { "source": "/clan", "destination": "/clan.html" }
+      { "source": "/inventory", "destination": "/inventory.html" },
+      { "source": "/clan", "destination": "/clan.html" },
+      { "source": "/friends", "destination": "/friends.html" }
     ]
   },
   "database": {
