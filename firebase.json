@@ -22,7 +22,8 @@
       { "source": "/2v2", "destination": "/2v2.html" },
       { "source": "/inventory", "destination": "/inventory.html" },
       { "source": "/clan", "destination": "/clan.html" },
-      { "source": "/friends", "destination": "/friends.html" }
+      { "source": "/friends", "destination": "/friends.html" },
+      { "source": "/matchmaking", "destination": "/matchmaking.html" }
     ]
   },
   "database": {
