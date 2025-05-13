@@ -9,7 +9,7 @@
 
     <!-- Firebase auth check -->
     <script type="module">
-        import { getDatabase, ref, onValue, update, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, push, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
@@ -39,14 +39,14 @@
             const list = document.getElementById("clans");
             list.innerHTML = "";
 
-            if (!clans) {
-                list.innerHTML = "<li>No clans yet!</li>";
+            if (!clans || Object.keys(clans).length === 0) {
+                list.innerHTML = "<li style='color: white; font-size: 1.2rem; z-index: 1000;'>Not in any clan yet. Join or create one!</li>";
                 return;
             }
 
             const userRef = ref(db, `users/${currentUserId}`);
 
-            onValue(userRef, (userSnapshot) => {
+            get(userRef).then((userSnapshot) => {
                 const userData = userSnapshot.val();
                 const userClanId = userData?.clanId || null;
 
@@ -57,16 +57,16 @@
                     const isMember = userClanId === clanId;
 
                     div.innerHTML = `
-            <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" class="clan-icon" alt="Clan Icon" />
-            <div class="clan-info">
-                <h3>${clan.name}</h3>
-                <p>${clan.description}</p>
-                <span class="member-count">${Object.keys(clan.members || {}).length} members</span><br/>
-                <button class="btn" onclick="${isMember ? `leaveClan('${clanId}')` : `joinClan('${clanId}')`}" ${userClanId && !isMember ? 'disabled' : ''}>
-                    ${isMember ? 'Leave Clan' : (userClanId ? 'Join (Disabled)' : 'Join')}
-                </button>
-            </div>
-        `;
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" class="clan-icon" alt="Clan Icon" />
+                <div class="clan-info">
+                    <h3>${clan.name}</h3>
+                    <p>${clan.description}</p>
+                    <span class="member-count">${Object.keys(clan.members || {}).length} members</span><br/>
+                    <button class="btn" onclick="${isMember ? `leaveClan('${clanId}')` : `joinClan('${clanId}')`}" ${userClanId && !isMember ? 'disabled' : ''}>
+                        ${isMember ? 'Leave Clan' : (userClanId ? 'Join (Disabled)' : 'Join')}
+                    </button>
+                </div>
+            `;
 
                     list.appendChild(div);
                 });
@@ -118,7 +118,7 @@
                 const memberNamesPromises = members.map(uid =>
                     new Promise((resolve) => {
                         const userRef = ref(db, `users/${uid}/name`); // Fetch name from users/{uid}/name
-                        onValue(userRef, (snap) => {
+                        get(userRef).then((snap) => {
                             const userName = snap.val();
                             resolve(userName || "Unknown");
                         }, { onlyOnce: true });
@@ -606,7 +606,9 @@
                 <button class="btn" onclick="toggleCreateClanForm()">Create Clan</button>
             </div>
             <div class="clan-grid">
-                <div id="clans" class="clan-grid"></div>
+                <div id="clans" class="clan-grid">
+                    <p style="color: white;">Loading clans...</p>
+                </div>
             </div>
             <!-- Hidden form -->
             <div id="create-clan-form" class="create-clan-form" style="display: none;">
