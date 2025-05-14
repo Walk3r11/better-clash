@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1v1 Match</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import {
+            getDatabase, ref, set, get, onValue
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import {
+            getAuth, onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
+            authDomain: "better-clash-136da.firebaseapp.com",
+            projectId: "better-clash-136da",
+            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
+            storageBucket: "better-clash-136da.appspot.com",
+            messagingSenderId: "586663576851",
+            appId: "1:586663576851:web:436c37162a3fa5f32086e6"
+        };
+
+        initializeApp(firebaseConfig);
+    </script>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: black;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            parent: document.body,
+            scene: {
+                preload,
+                create
+            },
+            scale: {
+                mode: Phaser.Scale.RESIZE,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            backgroundColor: "#000"
+        };
+
+        const game = new Phaser.Game(config);
+
+        function preload() {
+            this.load.image('map', '../assets/maps/gravekeepersdaughter_arena_3K_no2v2.png');
+        }
+
+        function create() {
+            const image = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'map');
+            image.setOrigin(0.5, 0.5);
+
+            const scaleX = this.cameras.main.width / image.width;
+            const scaleY = this.cameras.main.height / image.height;
+            const baseScale = Math.min(scaleX, scaleY);
+
+            const zoomFactor = 1.8;
+            image.setScale(baseScale * zoomFactor);
+        }
+    </script>
+</body>
+
+</html>

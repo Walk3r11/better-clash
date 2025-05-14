@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Better Clash - 2v2</title>
 
-    <!-- Firebase auth check -->
+
     <script type="module">
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -27,10 +27,9 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        let lastActiveTime = Date.now();  // Track the last active time
-        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
+        let lastActiveTime = Date.now();  
+        const sessionTimeout = 30 * 60 * 1000; 
 
-        // Map emails to custom user names
         const emailToName = {
             'gagas': 'gagas slut',
             'pederakis': 'pederakis manafakis',
@@ -76,7 +75,7 @@
         });
     </script>
 
-    <!-- Styles -->
+
     <style>
         * {
             margin: 0;

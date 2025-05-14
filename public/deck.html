@@ -506,8 +506,9 @@
 
     <div style="margin-top: 30px; text-align: center;">
         <label for="deckSelector" style="font-weight: bold; font-size: 18px;">Choose Deck: </label>
-        <select id="deckSelector" style="padding: 6px 12px; font-size: 16px; border-radius: 6px; border: 2px solid #ccc; background-color: transparent; color: #ffffff;">
-            <!-- Decks 1 to 20 -->
+        <select id="deckSelector"
+            style="padding: 6px 12px; font-size: 16px; border-radius: 6px; border: 2px solid #ccc; background-color: transparent; color: #ffffff;">
+
             <script>
                 for (let i = 1; i <= 20; i++) {
                     document.write(`<option value="${i}">Deck ${i}</option>`);

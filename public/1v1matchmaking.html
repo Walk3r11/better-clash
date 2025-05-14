@@ -6,73 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>1v1 Matchmaking</title>
 
-    <!-- Firebase auth check -->
-    <script type="module">
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
-            authDomain: "better-clash-136da.firebaseapp.com",
-            projectId: "better-clash-136da",
-            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
-            storageBucket: "better-clash-136da.firebasestorage.app",
-            messagingSenderId: "586663576851",
-            appId: "1:586663576851:web:436c37162a3fa5f32086e6",
-            measurementId: "G-KZSXJLJX6N"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-
-        let lastActiveTime = Date.now();  // Track the last active time
-        const sessionTimeout = 30 * 60 * 1000;  // 30 minutes in milliseconds
-
-        // Map emails to custom user names
-        const emailToName = {
-            'gagas': 'gagas slut',
-            'pederakis': 'pederakis manafakis',
-        };
-
-        onAuthStateChanged(auth, user => {
-            if (!user) {
-                return window.location.replace("/login");
-            }
-
-            document.body.style.display = "block";
-
-            const logoutLink = document.querySelector('.logout');
-            if (logoutLink) {
-                logoutLink.addEventListener('click', e => {
-                    e.preventDefault();
-                    signOut(auth).then(() => window.location.replace("/login"));
-                });
-            }
-
-            const emailPrefix = user.email.split('@')[0];
-            const userName = emailToName[emailPrefix] || 'Unknown User';
-
-            const userRef = ref(db, 'users/' + user.uid);
-        });
-    </script>
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #5984e7, #6b44d8, #f9d342);
             background-size: 400% 400%;
             animation: gradientAnimation 5s ease infinite;
             color: white;
-            min-height: 100vh;
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
 
         @keyframes gradientAnimation {
@@ -88,11 +33,126 @@
                 background-position: 0% 50%;
             }
         }
+
+        .matchmaking-box {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .player-placeholder {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        .waiting-text {
+            margin-top: 20px;
+            font-style: italic;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 
 <body>
-    
+    <div class="matchmaking-box">
+        <div class="player-placeholder" id="player1">Waiting for Player 1...</div>
+        <div class="player-placeholder" id="player2">Waiting for Player 2...</div>
+        <div class="waiting-text">Looking for an opponent...</div>
+    </div>
+
+    <!-- Firebase matchmaking logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import {
+            getDatabase, ref, set, remove, get, onValue
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import {
+            getAuth, onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
+            authDomain: "better-clash-136da.firebaseapp.com",
+            projectId: "better-clash-136da",
+            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
+            storageBucket: "better-clash-136da.appspot.com",
+            messagingSenderId: "586663576851",
+            appId: "1:586663576851:web:436c37162a3fa5f32086e6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        const player1Div = document.getElementById('player1');
+        const player2Div = document.getElementById('player2');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return window.location.replace("/login");
+
+            const userId = user.uid;
+            const userEmail = user.email;
+
+            const queueRef = ref(db, 'queue/' + userId);
+            await set(queueRef, {
+                uid: userId,
+                email: userEmail,
+                timestamp: Date.now()
+            });
+
+            const globalQueueRef = ref(db, 'queue');
+
+            onValue(globalQueueRef, (snapshot) => {
+                const players = snapshot.exists() ? Object.values(snapshot.val()) : [];
+                player1Div.textContent = players[0]?.email || 'Waiting for Player 1...';
+                player2Div.textContent = players[1]?.email || 'Waiting for Player 2...';
+            });
+
+            const tryMatchPlayers = async () => {
+                const snapshot = await get(ref(db, 'queue'));
+                if (!snapshot.exists()) return;
+
+                const players = Object.values(snapshot.val())
+                    .filter(p => !p.matched)
+                    .sort((a, b) => a.timestamp - b.timestamp); // oldest first
+
+                if (players.length >= 2) {
+                    const [p1, p2] = players;
+
+                    // Set matched flag to avoid duplication
+                    await set(ref(db, 'queue/' + p1.uid + '/matched'), true);
+                    await set(ref(db, 'queue/' + p2.uid + '/matched'), true);
+
+                    const matchId = "match_" + Date.now();
+                    await set(ref(db, 'matches/' + matchId), {
+                        players: {
+                            [p1.uid]: p1.email,
+                            [p2.uid]: p2.email
+                        },
+                        timestamp: Date.now()
+                    });
+
+                    // Clean up queue after short delay
+                    setTimeout(async () => {
+                        await remove(ref(db, 'queue/' + p1.uid));
+                        await remove(ref(db, 'queue/' + p2.uid));
+                    }, 1000);
+
+                    if (userId === p1.uid || userId === p2.uid) {
+                        window.location.href = `/solo-match?matchId=${matchId}`;
+                    }
+                }
+            };
+
+            setInterval(tryMatchPlayers, 2000);
+        });
+    </script>
 </body>
 
 </html>

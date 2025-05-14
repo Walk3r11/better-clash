@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Better Clash - Clan</title>
 
-    <!-- Firebase auth check -->
     <script type="module">
         import { getDatabase, ref, onValue, update, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -252,7 +251,7 @@
         });
     </script>
 
-    <!-- Styles -->
+    
     <style>
         * {
             margin: 0;
@@ -609,7 +608,7 @@
             <div class="clan-grid">
                 <div id="clans" class="clan-grid"></div>
             </div>
-            <!-- Hidden form -->
+            
             <div id="create-clan-form" class="create-clan-form" style="display: none;">
                 <h2>Create a Clan</h2>
                 <input id="clan-name" class="input" type="text" placeholder="Clan Name">
