@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -23,6 +24,7 @@
             display: block;
         }
     </style>
+
 </head>
 
 <body>
@@ -65,7 +67,6 @@
                     alert("No current deck selected!");
                     return;
                 }
-
                 const selectedDeck = userDeckData[currDeckIndex];
 
                 if (!selectedDeck) {
@@ -73,12 +74,12 @@
                     return;
                 }
 
-                const deckArray = Object.values(selectedDeck); // selectedDeck is already an array, so you might not need Object.values here
-                const shuffledDeck = shuffleArray(selectedDeck);  // shuffleArray expects an array
+                const shuffledDeck = shuffleArray(selectedDeck);
                 const startingHand = shuffledDeck.slice(0, 4);
                 const nextCard = shuffledDeck[4];
 
-                startGame(startingHand, nextCard);
+
+                startGame(startingHand, nextCard, shuffledDeck);
             }).catch((err) => {
                 console.error("Error fetching deck:", err);
             });
@@ -88,7 +89,7 @@
             return array.sort(() => Math.random() - 0.5);
         }
 
-        function startGame(startingHand, nextCard) {
+        function startGame(startingHand, nextCard, shuffledDeck) {
             class MatchScene extends Phaser.Scene {
                 constructor() {
                     super({ key: 'MatchScene' });
@@ -97,6 +98,7 @@
                 init(data) {
                     this.startingHand = data.startingHand;
                     this.nextCard = data.nextCard;
+                    this.shuffledDeck = data.shuffledDeck;
                 }
 
                 preload() {
@@ -165,9 +167,13 @@
                 }
 
                 create() {
+                    this.usedCards = [];
+
                     const image = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'map');
                     image.setOrigin(0.5, 0.5);
                     image.setScale(this.cameras.main.width / image.width);
+
+                    this.maxVisibleCards = 4;
 
                     // Elixir
                     this.elixir = 7;
@@ -195,25 +201,175 @@
                     this.elixirPerSecond = 1 / 2.8;
 
                     const cardWidth = 80, cardHeight = 120, spacing = 20;
-                    const startX = (this.cameras.main.width - (cardWidth + spacing) * 4) / 2;
-                    const yPosition = this.cameras.main.height - cardHeight - 50;
+                    const startX = 60; // Left margin
+                    const yPosition = this.cameras.main.height - cardHeight - 40; // Bottom position
 
-                    // Draw starting hand images
-                    startingHand.forEach((cardName, index) => {
-                        const xPosition = startX + index * (cardWidth + spacing);
-                        const cardImage = this.add.image(xPosition, yPosition, cardName);
-                        cardImage.setDisplaySize(cardWidth, cardHeight);
-                        cardImage.setOrigin(0.5);
+                    this.selectedCardIndex = null;
+                    this.deckQueue = this.shuffledDeck.slice(5); // ✅ Only cards after startingHand + nextCard
+                    this.cardSprites = []; // ✅ FIX: initialize before using push
+
+                    // After changing the hand (adding a card)
+                    this.cardSprites.forEach((card, index) => {
+                        card.sprite.removeAllListeners(); // Prevent stacking
+                        card.sprite.on('pointerdown', () => {
+                            this.selectedCardIndex = index;
+                            this.selectedCardName = card.name;
+                            console.log(`Selected card: ${card.name}`);
+                        });
                     });
 
-                    // Define previewX and previewY AFTER cardWidth, cardHeight, yPosition are defined
-                    const previewX = this.cameras.main.width - cardWidth - 20;
-                    const previewY = yPosition - cardHeight - 20;
 
-                    // Display next card preview
+                    // Draw the 4 cards on the bottom left
+                    startingHand.forEach((cardName, index) => {
+                        const xPosition = startX + index * (cardWidth + spacing);
+
+                        const bg = this.add.graphics();
+                        bg.fillStyle(0x444444, 1);
+                        bg.fillRoundedRect(xPosition - cardWidth / 2, yPosition - cardHeight / 2, cardWidth, cardHeight, 6);
+
+                        const cardImage = this.add.image(xPosition, yPosition, cardName);
+                        cardImage.setDisplaySize(cardWidth, cardHeight);
+                        cardImage.setInteractive({ useHandCursor: true });
+
+                        cardImage.on('pointerdown', () => {
+                            this.selectedCardIndex = index;
+                            this.selectedCardName = cardName;
+                            console.log(`Selected card: ${cardName}`);
+                        });
+
+                        this.cardSprites.push({ sprite: cardImage, name: cardName, bg, x: xPosition, y: yPosition });
+                    });
+
+                    const previewX = this.cameras.main.width - cardWidth - 50;
+                    const previewY = yPosition - 10; // Aligned to same Y as other cards
+
+                    // Background placeholder
+                    const previewBg = this.add.graphics();
+                    previewBg.fillStyle(0x555555, 1);
+                    previewBg.fillRoundedRect(previewX - cardWidth / 2, previewY - cardHeight / 2, cardWidth, cardHeight, 6);
+                    previewBg.setDepth(0);
+
+                    // Preview card image
                     const previewCardImage = this.add.image(previewX, previewY, nextCard);
                     previewCardImage.setDisplaySize(cardWidth, cardHeight);
                     previewCardImage.setOrigin(0.5);
+                    previewCardImage.setDepth(1);
+
+                    const zoneWidth = this.cameras.main.width * 0.4; // 40% of screen width
+                    this.placementZone = new Phaser.Geom.Rectangle(
+                        this.cameras.main.centerX - zoneWidth / 2,
+                        0,
+                        zoneWidth,
+                        this.cameras.main.height
+                    );
+
+                    this.zoneGraphics = this.add.graphics();
+                    this.zoneGraphics.lineStyle(4, 0xff0000, 1); // Red border
+                    this.zoneGraphics.strokeRectShape(this.placementZone);
+
+                    // Input for placing cards
+                    // … inside create():
+                    this.input.on('pointerdown', (pointer) => {
+                        const { x, y } = pointer;
+
+                        if (this.selectedCardIndex === null) {
+                            console.log("No card selected.");
+                            return;
+                        }
+
+                        // Clear & re‑draw highlights
+                        this.cardSprites.forEach((card) => {
+                            card.bg.clear();
+                            card.bg.fillStyle(0x444444, 1);
+                            card.bg.fillRoundedRect(
+                                card.x - cardWidth / 2,
+                                card.y - cardHeight / 2,
+                                cardWidth, cardHeight, 6
+                            );
+                        });
+                        const sel = this.cardSprites[this.selectedCardIndex];
+                        sel.bg.clear();
+                        sel.bg.fillStyle(0x8888ff, 1);
+                        sel.bg.fillRoundedRect(
+                            sel.x - cardWidth / 2,
+                            sel.y - cardHeight / 2,
+                            cardWidth, cardHeight, 6
+                        );
+
+                        if (!Phaser.Geom.Rectangle.Contains(this.placementZone, x, y)) {
+                            return; // tapped outside the placement zone
+                        }
+
+                        const cardCost = 3;
+                        if (this.elixir < cardCost) {
+                            console.log("Not enough elixir!");
+                            return;
+                        }
+                        this.elixir -= cardCost;
+
+                        // 1) Remove played card from hand → into usedCards
+                        const playedIdx = this.selectedCardIndex;
+                        const playedName = this.startingHand[playedIdx];
+                        this.usedCards.push(playedName);
+
+                        // 2) Replace that slot with the previewed nextCard
+                        this.startingHand[playedIdx] = this.nextCard;
+
+                        // 3) Pull a fresh nextCard from the deckQueue (and recycle if needed)
+                        this.nextCard = this.deckQueue.shift();
+                        if (this.nextCard === undefined && this.usedCards.length) {
+                            this.deckQueue = Phaser.Utils.Array.Shuffle(this.usedCards.slice());
+                            this.usedCards = [];
+                            this.nextCard = this.deckQueue.shift();
+                        }
+
+                        // 4) Refresh your UI
+                        this.refreshHand();
+
+                        // Update the preview card
+                        if (this.nextCard && this.textures.exists(this.nextCard)) {
+                            previewCardImage.setTexture(this.nextCard);
+                            previewCardImage.setVisible(true);
+                        } else {
+                            previewCardImage.setVisible(false);
+                        }
+
+                        // 5) Reset selection
+                        this.selectedCardIndex = null;
+                    });
+                }
+
+                refreshHand() {
+                    const cardWidth = 80, cardHeight = 120, spacing = 20;
+                    const startX = 60;
+                    const yPosition = this.cameras.main.height - cardHeight - 40;
+
+                    // Destroy old card sprites and backgrounds
+                    this.cardSprites.forEach(card => {
+                        card.sprite.destroy();
+                        card.bg.destroy();
+                    });
+                    this.cardSprites = [];
+
+                    // Recreate cards from current startingHand array
+                    this.startingHand.forEach((cardName, index) => {
+                        const xPos = startX + index * (cardWidth + spacing);
+
+                        const bg = this.add.graphics();
+                        bg.fillStyle(0x444444, 1);
+                        bg.fillRoundedRect(xPos - cardWidth / 2, yPosition - cardHeight / 2, cardWidth, cardHeight, 6);
+
+                        const cardImage = this.add.image(xPos, yPosition, cardName);
+                        cardImage.setDisplaySize(cardWidth, cardHeight);
+                        cardImage.setInteractive({ useHandCursor: true });
+                        cardImage.on('pointerdown', () => {
+                            this.selectedCardIndex = index;
+                            this.selectedCardName = cardName;
+                            console.log(`Selected card: ${cardName}`);
+                        });
+
+                        this.cardSprites.push({ sprite: cardImage, name: cardName, bg, x: xPos, y: yPosition });
+                    });
                 }
 
                 update() {
@@ -257,7 +413,7 @@
             };
 
             const game = new Phaser.Game(config);
-            game.scene.start('MatchScene', { startingHand, nextCard });
+            game.scene.start('MatchScene', { startingHand, nextCard, shuffledDeck });
         }
     </script>
 </body>
