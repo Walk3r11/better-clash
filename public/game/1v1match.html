@@ -8,28 +8,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import {
-            getDatabase, ref, set, get, onValue
-        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-        import {
-            getAuth, onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
-            authDomain: "better-clash-136da.firebaseapp.com",
-            projectId: "better-clash-136da",
-            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
-            storageBucket: "better-clash-136da.appspot.com",
-            messagingSenderId: "586663576851",
-            appId: "1:586663576851:web:436c37162a3fa5f32086e6"
-        };
-
-        initializeApp(firebaseConfig);
-    </script>
-
     <style>
         html,
         body {
@@ -48,39 +26,238 @@
 </head>
 
 <body>
-    <script>
-        const config = {
-            type: Phaser.AUTO,
-            width: window.innerWidth,
-            height: window.innerHeight,
-            parent: document.body,
-            scene: {
-                preload,
-                create
-            },
-            scale: {
-                mode: Phaser.Scale.RESIZE,
-                autoCenter: Phaser.Scale.CENTER_BOTH
-            },
-            backgroundColor: "#000"
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFERehWpvbXIALnNA7KA45297KESZi5qg",
+            authDomain: "better-clash-136da.firebaseapp.com",
+            projectId: "better-clash-136da",
+            databaseURL: "https://better-clash-136da-default-rtdb.europe-west1.firebasedatabase.app",
+            storageBucket: "better-clash-136da.appspot.com",
+            messagingSenderId: "586663576851",
+            appId: "1:586663576851:web:436c37162a3fa5f32086e6"
         };
 
-        const game = new Phaser.Game(config);
+        initializeApp(firebaseConfig);
+        const db = getDatabase();
+        const auth = getAuth();
 
-        function preload() {
-            this.load.image('map', '../assets/maps/gravekeepersdaughter_arena_3K_no2v2.png');
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                alert("Not logged in");
+                return;
+            }
+
+            const deckRef = ref(db, `decks/${user.uid}`);
+            get(deckRef).then((snapshot) => {
+                if (!snapshot.exists()) {
+                    alert("No deck found!");
+                    return;
+                }
+
+                const userDeckData = snapshot.val();
+                const currDeckIndex = userDeckData.currDeck;
+
+                if (currDeckIndex === undefined) {
+                    alert("No current deck selected!");
+                    return;
+                }
+
+                const selectedDeck = userDeckData[currDeckIndex];
+
+                if (!selectedDeck) {
+                    alert("No deck data found for the selected current deck!");
+                    return;
+                }
+
+                const deckArray = Object.values(selectedDeck); // selectedDeck is already an array, so you might not need Object.values here
+                const shuffledDeck = shuffleArray(selectedDeck);  // shuffleArray expects an array
+                const startingHand = shuffledDeck.slice(0, 4);
+                const nextCard = shuffledDeck[4];
+
+                startGame(startingHand, nextCard);
+            }).catch((err) => {
+                console.error("Error fetching deck:", err);
+            });
+        });
+
+        function shuffleArray(array) {
+            return array.sort(() => Math.random() - 0.5);
         }
 
-        function create() {
-            const image = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'map');
-            image.setOrigin(0.5, 0.5);
+        function startGame(startingHand, nextCard) {
+            class MatchScene extends Phaser.Scene {
+                constructor() {
+                    super({ key: 'MatchScene' });
+                }
 
-            const scaleX = this.cameras.main.width / image.width;
-            const scaleY = this.cameras.main.height / image.height;
-            const baseScale = Math.min(scaleX, scaleY);
+                init(data) {
+                    this.startingHand = data.startingHand;
+                    this.nextCard = data.nextCard;
+                }
 
-            const zoomFactor = 1.8;
-            image.setScale(baseScale * zoomFactor);
+                preload() {
+                    this.load.image('map', '../assets/maps/gravekeepersdaughter_arena_3K_no2v2.png');
+
+                    // Load all card images
+                    const cardNameToFileMap = {
+                        "Archer Queen": "Archer_Queen.png",
+                        "Bats Evolution": "Bats_evolution_card.png",
+                        "Archer Evolution": "Card_Archer_evolution.png",
+                        "Bomb Tower": "Card_Bomb_Tower.png",
+                        "Bomber Evolution": "Card_Bomber_Evolution.png",
+                        "Cannon Evolution": "Card_Cannon_Evolution.png",
+                        "Cannoneer": "Card_Cannoneer.png",
+                        "Dagger Duchess": "Card_Dagger_Duchess_Tower_Troop.png",
+                        "Dart Goblin Evolution": "Card_Dart_Goblin_evolution_01.png",
+                        "Earthquake": "Card_Earthquake.png",
+                        "Electro Spirit": "Card_Electro_Sprit.png",
+                        "Electro Wizard": "Card_Electro_Wizard.png",
+                        "Elixir Collector": "Card_Elixir_Collector.png",
+                        "Fireball": "Card_Fireball.png",
+                        "Fisherman": "Card_Fisherman.png",
+                        "Freeze": "Card_Freeze.png",
+                        "Guards": "Card_Giards.png",
+                        "Goblin Barrel": "Card_Goblin_Barrel.png",
+                        "Goblin Demolisher": "Card_Goblin_Demolisher.png",
+                        "Goblin Gang": "Card_Goblin_Gang.png",
+                        "Goblinstein": "Card_Goblinstein.png",
+                        "Golem": "Card_Golem.png",
+                        "Hog Rider": "Card_Hog_Rider.png",
+                        "Hunter Evolution": "Card_Hunter_Evolution_01.png",
+                        "Ice Golem": "Card_Ice_Golem.png",
+                        "Ice Spirit": "Card_Ice_Spirit.png",
+                        "Ice Spirit Evolution": "Card_Ice_Spirit_Evolution.png",
+                        "Ice Wizard": "Card_Ice_Wizard.png",
+                        "Mega Knight": "Card_Mega_Knight.png",
+                        "Miner": "Card_Miner.png",
+                        "Mini P.E.K.K.A Super": "Card_Mini_PEKKA_Super.png",
+                        "Minion Horde": "Card_Minion_Horde.png",
+                        "Monk": "Card_Monk.png",
+                        "Mother Witch": "Card_Mother_Witch.png",
+                        "Musketeer Evolution": "Card_Musketeer_Evolution.png",
+                        "Night Witch": "Card_Night_Witch.png",
+                        "Poison": "Card_Poison.png",
+                        "Princess": "Card_Princess_Tower_Troop.png",
+                        "Rage": "Card_Rage.png",
+                        "Rocket": "Card_Rocket.png",
+                        "Royal Delivery": "Card_Royal_Delivery.png",
+                        "Tesla Evolution": "Card_Tesla_Evolution.png",
+                        "The Log": "Card_The_Log.png",
+                        "Three Musketeers": "Card_Three_Musketeers.png",
+                        "Tornado": "Card_Tornado.png",
+                        "Valkyrie Evolution": "Card_Valkyrie_Evolution_Frame_01.png",
+                        "Void": "Card_Void.png",
+                        "Zap Evolution": "Card_Zap_Evolution.png",
+                        "Executioner Evolution": "Executioner_evolution_card.png",
+                        "Little Prince": "Little_Prince_card.png",
+                        "Firecracker Evolution": "card_firecracker_evolution.png",
+                        "Royal Giant Evolution": "card_royal_giant_evolution.png",
+                        "Skeletons Evolution": "card_skeletons_evolution.png"
+                    };
+
+                    for (const [cardName, fileName] of Object.entries(cardNameToFileMap)) {
+                        this.load.image(cardName, `../assets/cards/${fileName}`);
+                    }
+                }
+
+                create() {
+                    const image = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'map');
+                    image.setOrigin(0.5, 0.5);
+                    image.setScale(this.cameras.main.width / image.width);
+
+                    // Elixir
+                    this.elixir = 7;
+                    this.maxElixir = 10;
+                    this.fillProgress = 0;
+
+                    const barX = 60, barY = 120, barHeight = 300, barWidth = 30, borderRadius = 12;
+                    this.elixirBar = { barX, barY, barHeight, barWidth, borderRadius };
+
+                    const container = this.add.graphics();
+                    container.fillStyle(0x222222, 0.6);
+                    container.fillRoundedRect(barX - barWidth / 2 - 6, barY - 10, barWidth + 12, barHeight + 20, borderRadius + 4);
+
+                    this.fill = this.add.graphics();
+                    const fillMask = this.make.graphics({ x: 0, y: 0, add: false });
+                    fillMask.fillStyle(0xffffff, 1);
+                    fillMask.fillRoundedRect(barX - barWidth / 2, barY, barWidth, barHeight, borderRadius);
+                    this.fill.setMask(new Phaser.Display.Masks.GeometryMask(this, fillMask));
+
+                    this.elixirText = this.add.text(barX, barY + barHeight + 25, `0`, {
+                        fontSize: '20px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold'
+                    }).setOrigin(0.5);
+
+                    this.lastUpdateTime = Date.now();
+                    this.elixirPerSecond = 1 / 2.8;
+
+                    const cardWidth = 80, cardHeight = 120, spacing = 20;
+                    const startX = (this.cameras.main.width - (cardWidth + spacing) * 4) / 2;
+                    const yPosition = this.cameras.main.height - cardHeight - 50;
+
+                    // Draw starting hand images
+                    startingHand.forEach((cardName, index) => {
+                        const xPosition = startX + index * (cardWidth + spacing);
+                        const cardImage = this.add.image(xPosition, yPosition, cardName);
+                        cardImage.setDisplaySize(cardWidth, cardHeight);
+                        cardImage.setOrigin(0.5);
+                    });
+
+                    // Define previewX and previewY AFTER cardWidth, cardHeight, yPosition are defined
+                    const previewX = this.cameras.main.width - cardWidth - 20;
+                    const previewY = yPosition - cardHeight - 20;
+
+                    // Display next card preview
+                    const previewCardImage = this.add.image(previewX, previewY, nextCard);
+                    previewCardImage.setDisplaySize(cardWidth, cardHeight);
+                    previewCardImage.setOrigin(0.5);
+                }
+
+                update() {
+                    const now = Date.now();
+                    const elapsedSeconds = (now - this.lastUpdateTime) / 1000;
+
+                    if (this.elixir < this.maxElixir && elapsedSeconds > 0) {
+                        this.elixir += this.elixirPerSecond * elapsedSeconds;
+                        if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
+
+                        this.fillProgress = this.elixir / this.maxElixir;
+                        this.elixirText.setText(Math.floor(this.elixir));
+                    }
+
+                    this.lastUpdateTime = now;
+                    this.drawLiquidFill(this.fillProgress);
+                }
+
+                drawLiquidFill(progress) {
+                    const { barX, barY, barHeight, barWidth, borderRadius } = this.elixirBar;
+                    const fillHeight = progress * barHeight;
+                    const yStart = barY + barHeight - fillHeight;
+
+                    this.fill.clear();
+                    this.fill.fillGradientStyle(0xd97bff, 0xaa00ff, 0x6600aa, 0x440066);
+                    this.fill.fillRoundedRect(barX - barWidth / 2, yStart, barWidth, fillHeight, borderRadius);
+                }
+            }
+
+            const config = {
+                type: Phaser.AUTO,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                parent: document.body,
+                scene: MatchScene,
+                scale: {
+                    mode: Phaser.Scale.RESIZE,
+                    autoCenter: Phaser.Scale.CENTER_BOTH
+                },
+                backgroundColor: "#000"
+            };
+
+            const game = new Phaser.Game(config);
+            game.scene.start('MatchScene', { startingHand, nextCard });
         }
     </script>
 </body>

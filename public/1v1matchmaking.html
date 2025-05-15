@@ -125,28 +125,35 @@
                 if (players.length >= 2) {
                     const [p1, p2] = players;
 
-                    // Set matched flag to avoid duplication
-                    await set(ref(db, 'queue/' + p1.uid + '/matched'), true);
-                    await set(ref(db, 'queue/' + p2.uid + '/matched'), true);
-
                     const matchId = "match_" + Date.now();
-                    await set(ref(db, 'matches/' + matchId), {
-                        players: {
-                            [p1.uid]: p1.email,
-                            [p2.uid]: p2.email
-                        },
-                        timestamp: Date.now()
-                    });
 
-                    // Clean up queue after short delay
-                    setTimeout(async () => {
-                        await remove(ref(db, 'queue/' + p1.uid));
-                        await remove(ref(db, 'queue/' + p2.uid));
-                    }, 1000);
+                    // Create match only once — let only the OLDEST player do this
+                    if (userId === p1.uid) {
+                        await set(ref(db, 'matches/' + matchId), {
+                            players: {
+                                [p1.uid]: p1.email,
+                                [p2.uid]: p2.email
+                            },
+                            timestamp: Date.now()
+                        });
 
-                    if (userId === p1.uid || userId === p2.uid) {
-                        window.location.href = `/solo-match?matchId=${matchId}`;
+                        await set(ref(db, `queue/${p1.uid}/matched`), matchId);
+                        await set(ref(db, `queue/${p2.uid}/matched`), matchId);
+
+                        // Optional: clean up queue later
+                        setTimeout(async () => {
+                            await remove(ref(db, 'queue/' + p1.uid));
+                            await remove(ref(db, 'queue/' + p2.uid));
+                        }, 2000);
                     }
+                }
+
+                // Check if this player was matched by someone else
+                const myMatchSnapshot = await get(ref(db, `queue/${userId}/matched`));
+                const myMatchId = myMatchSnapshot.exists() ? myMatchSnapshot.val() : null;
+
+                if (myMatchId) {
+                    window.location.href = `/solo-match?matchId=${myMatchId}`;
                 }
             };
 
