@@ -104,6 +104,11 @@
                 preload() {
                     this.load.image('map', '../assets/maps/gravekeepersdaughter_arena_3K_no2v2.png');
 
+                    this.load.image('kingTower', '../assets/maps/Tower_Skin_ClashramaKingsHead_King_Blue.png');
+                    this.load.image('enemyKingTower', '../assets/maps/Tower_Skin_ClashramaKingsHead_King_Red.png');
+                    this.load.image('princessTowerLeft', '../assets/maps/Tower_Skin_ClashramaKingsHead_Princess_Blue.png');
+                    this.load.image('princessTowerRight', '../assets/maps/Tower_Skin_ClashramaKingsHead_Princess_Red.png');
+
                     // Load all card images
                     const cardNameToFileMap = {
                         "Archer Queen": "Archer_Queen.png",
@@ -173,6 +178,48 @@
                     image.setOrigin(0.5, 0.5);
                     image.setScale(this.cameras.main.width / image.width);
 
+                    // Tower positions (adjust as needed to match your map)
+                    const mapCenterX = this.cameras.main.centerX;
+                    const mapCenterY = this.cameras.main.centerY;
+                    const mapWidth = image.displayWidth;
+                    const mapHeight = image.displayHeight;
+
+                    const towerScale = 0.5;
+
+                    // Blue king tower in the middle (bottom)
+                    const kingTower = this.add.image(mapCenterX, mapCenterY + mapHeight * 0.19, 'kingTower');
+                    kingTower.setOrigin(0.5);
+                    kingTower.setScale(towerScale);
+                    kingTower.setDepth(10);
+
+                    // Red king tower in the middle (top)
+                    const enemyKingTower = this.add.image(mapCenterX, mapCenterY - mapHeight * 0.20, 'enemyKingTower');
+                    enemyKingTower.setOrigin(0.5);
+                    enemyKingTower.setScale(towerScale);
+                    enemyKingTower.setDepth(10);
+
+                    // Blue princess towers (bottom left and right)
+                    const princessTowerBlueLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY + mapHeight * 0.14 - 3, 'princessTowerLeft');
+                    princessTowerBlueLeft.setOrigin(0.5);
+                    princessTowerBlueLeft.setScale(towerScale);
+                    princessTowerBlueLeft.setDepth(10);
+
+                    const princessTowerBlueRight = this.add.image(mapCenterX + mapWidth * 0.12 - 3, mapCenterY + mapHeight * 0.14 - 3, 'princessTowerLeft');
+                    princessTowerBlueRight.setOrigin(0.5);
+                    princessTowerBlueRight.setScale(towerScale);
+                    princessTowerBlueRight.setDepth(10);
+
+                    // Red princess towers (top left and right)
+                    const princessTowerRedLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY - mapHeight * 0.14 - 9, 'princessTowerRight');
+                    princessTowerRedLeft.setOrigin(0.5);
+                    princessTowerRedLeft.setScale(towerScale);
+                    princessTowerRedLeft.setDepth(10);
+
+                    const princessTowerRedRight = this.add.image(mapCenterX + mapWidth * 0.12 - 3, mapCenterY - mapHeight * 0.14 - 9, 'princessTowerRight');
+                    princessTowerRedRight.setOrigin(0.5);
+                    princessTowerRedRight.setScale(towerScale);
+                    princessTowerRedRight.setDepth(10);
+
                     this.maxVisibleCards = 4;
 
                     // Elixir
@@ -205,8 +252,8 @@
                     const yPosition = this.cameras.main.height - cardHeight - 40; // Bottom position
 
                     this.selectedCardIndex = null;
-                    this.deckQueue = this.shuffledDeck.slice(5); // ✅ Only cards after startingHand + nextCard
-                    this.cardSprites = []; // ✅ FIX: initialize before using push
+                    this.deckQueue = this.shuffledDeck.slice(5);
+                    this.cardSprites = [];
 
                     // After changing the hand (adding a card)
                     this.cardSprites.forEach((card, index) => {
@@ -217,7 +264,6 @@
                             console.log(`Selected card: ${card.name}`);
                         });
                     });
-
 
                     // Draw the 4 cards on the bottom left
                     startingHand.forEach((cardName, index) => {
