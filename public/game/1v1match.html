@@ -173,6 +173,59 @@
 
                 create() {
                     this.usedCards = [];
+                    this.cardElixirCosts = {
+                        'Bats Evolution': 2,
+                        'Musketeer Evolution': 4,
+                        'Bomber Evolution': 2,
+                        'Rocket': 6,
+                        'Cannon Evolution': 3,
+                        'Tesla Evolution': 4,
+                        'Dart Goblin Evolution': 3,
+                        'Three Musketeers': 9,
+                        'Electro Wizard': 4,
+                        'Void': 4, // assumed
+                        'Fireball': 4,
+                        'Zap Evolution': 2,
+                        'Goblin Demolisher': 4,
+                        'Executioner Evolution': 5,
+                        'Golem': 8,
+                        'Firecracker Evolution': 3,
+                        'Mega Knight': 7,
+                        'Royal Giant Evolution': 6,
+                        'Miner': 3,
+                        'Skeletons Evolution': 1,
+                        'Mother Witch': 4,
+                        'Archer Queen': 5,
+                        'Ice Wizard': 3,
+                        'Archer Evolution': 3,
+                        'Bomb Tower': 4,
+                        'Mini PEKKA Super': 4,
+                        'Minion Horde': 5,
+                        'Monk': 5,
+                        'Cannoneer': 4,
+                        'Dagger Duchess': 3,
+                        'Night Witch': 4,
+                        'Poison': 4,
+                        'Earthquake': 3,
+                        'Electro Spirit': 1,
+                        'Rage': 2,
+                        'Royal Delivery': 3,
+                        'Elixir Collector': 6,
+                        'The Log': 2,
+                        'Tornado': 3,
+                        'Valkyrie Evolution': 4,
+                        'Guards': 3,
+                        'Goblin Barrel': 3,
+                        'Goblin Gang': 3,
+                        'Goblinstein': 4,
+                        'Hog Rider': 4,
+                        'Hunter Evolution': 4,
+                        'Ice Golem': 2,
+                        'Ice Spirit': 1,
+                        'Ice Spirit Evolution': 1,
+                        'Fisherman': 3,
+                        'Little Prince': 4
+                    };
 
                     const image = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'map');
                     image.setOrigin(0.5, 0.5);
@@ -346,11 +399,17 @@
                             return; // tapped outside the placement zone
                         }
 
-                        const cardCost = 3;
+                        let cardCost = this.cardElixirCosts[this.selectedCardName];
+                        if (cardCost === undefined) {
+                            console.warn(`No elixir cost found for card: ${this.selectedCardName}, defaulting to 3`);
+                            cardCost = 3; // fallback
+                        }
+
                         if (this.elixir < cardCost) {
                             console.log("Not enough elixir!");
                             return;
                         }
+
                         this.elixir -= cardCost;
 
                         // 1) Remove played card from hand → into usedCards
