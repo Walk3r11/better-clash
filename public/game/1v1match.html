@@ -189,36 +189,36 @@
                     this.usedCards = [];
 
                     const cardStats = {
-                        'Bats Evolution': { health: 300, damage: 50, speed: 1.2 },
-                        'Musketeer Evolution': { health: 500, damage: 100, speed: 1.5, range: 130 },
-                        'Bomber Evolution': { health: 400, damage: 150, speed: 1.0 },
+                        'Bats Evolution': { health: 150, damage: 50, speed: 1.2 },
+                        'Musketeer Evolution': { health: 955, damage: 100, speed: 0.7, range: 180 },
+                        'Bomber Evolution': { health: 400, damage: 150, speed: 0.5, range: 170 },
                         'Rocket': { health: 0, damage: 1000, speed: 2.0 },
-                        'Cannon Evolution': { health: 1500, damage: 200, speed: 1.0 },
-                        'Tesla Evolution': { health: 800, damage: 250, speed: 1.1 },
-                        'Dart Goblin Evolution': { health: 200, damage: 75, speed: 1.3 },
-                        'Three Musketeers': { health: 300, damage: 150, speed: 1.6 },
-                        'Electro Wizard': { health: 600, damage: 120, speed: 1.2 },
+                        'Cannon Evolution': { health: 1500, damage: 200, speed: 1.0, range: 110 },
+                        'Tesla Evolution': { health: 800, damage: 250, speed: 1.1, range: 120 },
+                        'Dart Goblin Evolution': { health: 200, damage: 75, speed: 1.3, range: 160 },
+                        'Three Musketeers': { health: 300, damage: 150, speed: 1.6, range: 130 },
+                        'Electro Wizard': { health: 600, damage: 120, speed: 1.2, range: 110 },
                         'Void': { health: 1000, damage: 250, speed: 1.5 },
                         'Fireball': { health: 0, damage: 700, speed: 2.0 },
                         'Zap Evolution': { health: 0, damage: 300, speed: 1.8 },
                         'Goblin Demolisher': { health: 700, damage: 180, speed: 1.4 },
-                        'Executioner Evolution': { health: 900, damage: 250, speed: 1.1 },
+                        'Executioner Evolution': { health: 900, damage: 250, speed: 1.1, range: 140 },
                         'Golem': { health: 4200, damage: 300, speed: 0.6 },
-                        'Firecracker Evolution': { health: 350, damage: 170, speed: 1.3 },
+                        'Firecracker Evolution': { health: 350, damage: 170, speed: 1.3, range: 200 },
                         'Mega Knight': { health: 3300, damage: 310, speed: 0.8 },
-                        'Royal Giant Evolution': { health: 3600, damage: 290, speed: 0.9 },
+                        'Royal Giant Evolution': { health: 3600, damage: 290, speed: 0.9, range: 130 },
                         'Miner': { health: 1000, damage: 160, speed: 1.2 },
                         'Skeletons Evolution': { health: 100, damage: 35, speed: 1.5 },
-                        'Mother Witch': { health: 750, damage: 140, speed: 1.2 },
+                        'Mother Witch': { health: 750, damage: 140, speed: 1.2, range: 120 },
                         'Archer Queen': { health: 1200, damage: 230, speed: 1.1, range: 140 },
-                        'Ice Wizard': { health: 800, damage: 120, speed: 1.1 },
+                        'Ice Wizard': { health: 800, damage: 120, speed: 1.1, range: 110 },
                         'Archer Evolution': { health: 300, damage: 90, speed: 1.5, range: 130 },
-                        'Bomb Tower': { health: 1600, damage: 200, speed: 1.0 },
+                        'Bomb Tower': { health: 1600, damage: 200, speed: 1.0, range: 110 },
                         'Mini PEKKA Super': { health: 1800, damage: 500, speed: 0.9 },
                         'Minion Horde': { health: 200 * 6, damage: 100 * 6, speed: 1.6 },
                         'Monk': { health: 1800, damage: 220, speed: 1.0 },
                         'Cannoneer': { health: 1000, damage: 210, speed: 1.2, range: 120 },
-                        'Dagger Duchess': { health: 700, damage: 130, speed: 1.5 },
+                        'Dagger Duchess': { health: 700, damage: 130, speed: 1.5, range: 100 },
                         'Night Witch': { health: 1200, damage: 190, speed: 1.0 },
                         'Poison': { health: 0, damage: 600, speed: 2.5 },
                         'Earthquake': { health: 0, damage: 550, speed: 2.3 },
@@ -240,7 +240,7 @@
                         'Ice Spirit': { health: 250, damage: 50, speed: 2.0 },
                         'Ice Spirit Evolution': { health: 300, damage: 75, speed: 2.0 },
                         'Fisherman': { health: 1200, damage: 180, speed: 1.1 },
-                        'Little Prince': { health: 1100, damage: 200, speed: 1.3, range: 130 },
+                        'Little Prince': { health: 1100, damage: 200, speed: 1.3, range: 130 }
                     };
 
                     this.cardElixirCosts = {
@@ -301,7 +301,6 @@
                     image.setOrigin(0.5, 0.5);
                     image.setScale(this.cameras.main.width / image.width);
 
-
                     const mapCenterX = this.cameras.main.centerX;
                     const mapCenterY = this.cameras.main.centerY;
                     const mapWidth = image.displayWidth;
@@ -317,12 +316,10 @@
                     kingTower.setScale(towerScale);
                     kingTower.setDepth(10);
 
-
                     const enemyKingTower = this.add.image(mapCenterX, mapCenterY - mapHeight * 0.20, 'enemyKingTower');
                     enemyKingTower.setOrigin(0.5);
                     enemyKingTower.setScale(towerScale);
                     enemyKingTower.setDepth(10);
-
 
                     const princessTowerBlueLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY + mapHeight * 0.14 - 3, 'princessTowerLeft');
                     princessTowerBlueLeft.setOrigin(0.5);
@@ -333,7 +330,6 @@
                     princessTowerBlueRight.setOrigin(0.5);
                     princessTowerBlueRight.setScale(towerScale);
                     princessTowerBlueRight.setDepth(10);
-
 
                     const princessTowerRedLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY - mapHeight * 0.14 - 9, 'princessTowerRight');
                     princessTowerRedLeft.setOrigin(0.5);
@@ -412,12 +408,10 @@
                     const previewX = this.cameras.main.width - cardWidth - 50;
                     const previewY = yPosition - 10;
 
-
                     const previewBg = this.add.graphics();
                     previewBg.fillStyle(0x555555, 1);
                     previewBg.fillRoundedRect(previewX - cardWidth / 2, previewY - cardHeight / 2, cardWidth, cardHeight, 6);
                     previewBg.setDepth(0);
-
 
                     const previewCardImage = this.add.image(previewX, previewY, nextCard);
                     previewCardImage.setDisplaySize(cardWidth, cardHeight);
@@ -444,7 +438,6 @@
                             return;
                         }
 
-
                         if (
                             !Phaser.Geom.Rectangle.Contains(this.placementZone, x, y) ||
                             y < this.cameras.main.centerY
@@ -465,7 +458,6 @@
 
                         this.elixir -= cardCost;
 
-
                         const cardName = this.selectedCardName;
                         const stats = cardStats[cardName];
                         if (!stats) {
@@ -473,55 +465,112 @@
                             return;
                         }
 
+                        if (cardName === "Bats Evolution") {
+                            const angleStep = (2 * Math.PI) / 5;
+                            const radius = 18;
+                            for (let j = 0; j < 5; j++) {
+                                const angle = j * angleStep;
+                                const bx = x + Math.cos(angle) * radius;
+                                const by = y + Math.sin(angle) * radius;
 
-                        const troopSprite = this.add.image(x, y, cardName);
-                        troopSprite.setScale(0.05);
-                        troopSprite.setDepth(20);
+                                const troopSprite = this.add.image(bx, by, cardName);
+                                troopSprite.setScale(0.05);
+                                troopSprite.setDepth(20);
+
+                                const barWidth = 50;
+                                const barHeight = 6;
+                                const healthBarBg = this.add.graphics();
+                                const healthBarFill = this.add.graphics();
 
 
-                        const barWidth = 50;
-                        const barHeight = 6;
-                        const healthBarBg = this.add.graphics();
-                        const healthBarFill = this.add.graphics();
+                                healthBarBg.fillStyle(0x555555);
+                                healthBarBg.fillRoundedRect(bx - barWidth / 2, by - 30, barWidth, barHeight, 3);
+                                healthBarFill.fillStyle(0x00ff00);
+                                healthBarFill.fillRoundedRect(bx - barWidth / 2, by - 30, barWidth, barHeight, 3);
 
 
-                        healthBarBg.fillStyle(0x555555);
-                        healthBarBg.fillRoundedRect(x - barWidth / 2, y - 30, barWidth, barHeight, 3);
-                        healthBarFill.fillStyle(0x00ff00);
-                        healthBarFill.fillRoundedRect(x - barWidth / 2, y - 30, barWidth, barHeight, 3);
+                                const troop = {
+                                    sprite: troopSprite,
+                                    healthBarBg,
+                                    healthBarFill,
+                                    maxHealth: stats.health,
+                                    currentHealth: stats.health,
+                                    damage: stats.damage,
+                                    speed: stats.speed,
+                                    range: stats.range || 30,
+                                    lastAttack: 0,
+                                    updateHealth: function (newHealth) {
+                                        this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
+                                        const healthPercent = this.currentHealth / this.maxHealth;
+                                        this.healthBarFill.clear();
+                                        this.healthBarFill.fillStyle(0x00ff00);
+                                        this.healthBarFill.fillRoundedRect(
+                                            this.sprite.x - barWidth / 2,
+                                            this.sprite.y - 30,
+                                            barWidth * healthPercent,
+                                            barHeight,
+                                            3
+                                        );
+                                    }
+                                };
 
+                                this.troopsGroup.add(troopSprite);
+                                this.troopsGroup.add(healthBarBg);
+                                this.troopsGroup.add(healthBarFill);
 
-                        const troop = {
-                            sprite: troopSprite,
-                            healthBarBg,
-                            healthBarFill,
-                            maxHealth: stats.health,
-                            currentHealth: stats.health,
-                            damage: stats.damage,
-                            speed: stats.speed,
-                            range: stats.range || 30,
-                            lastAttack: 0,
-                            updateHealth: function (newHealth) {
-                                this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
-                                const healthPercent = this.currentHealth / this.maxHealth;
-                                this.healthBarFill.clear();
-                                this.healthBarFill.fillStyle(0x00ff00);
-                                this.healthBarFill.fillRoundedRect(
-                                    this.sprite.x - barWidth / 2,
-                                    this.sprite.y - 30,
-                                    barWidth * healthPercent,
-                                    barHeight,
-                                    3
-                                );
+                                if (!this.placedTroops) this.placedTroops = [];
+                                this.placedTroops.push(troop);
                             }
-                        };
+                        } else {
+                            // ...your existing single-troop spawn code...
+                            const troopSprite = this.add.image(x, y, cardName);
+                            troopSprite.setScale(0.05);
+                            troopSprite.setDepth(20);
 
-                        this.troopsGroup.add(troopSprite);
-                        this.troopsGroup.add(healthBarBg);
-                        this.troopsGroup.add(healthBarFill);
+                            const barWidth = 50;
+                            const barHeight = 6;
+                            const healthBarBg = this.add.graphics();
+                            const healthBarFill = this.add.graphics();
 
-                        if (!this.placedTroops) this.placedTroops = [];
-                        this.placedTroops.push(troop);
+
+                            healthBarBg.fillStyle(0x555555);
+                            healthBarBg.fillRoundedRect(x - barWidth / 2, y - 30, barWidth, barHeight, 3);
+                            healthBarFill.fillStyle(0x00ff00);
+                            healthBarFill.fillRoundedRect(x - barWidth / 2, y - 30, barWidth, barHeight, 3);
+
+
+                            const troop = {
+                                sprite: troopSprite,
+                                healthBarBg,
+                                healthBarFill,
+                                maxHealth: stats.health,
+                                currentHealth: stats.health,
+                                damage: stats.damage,
+                                speed: stats.speed,
+                                range: stats.range || 30,
+                                lastAttack: 0,
+                                updateHealth: function (newHealth) {
+                                    this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
+                                    const healthPercent = this.currentHealth / this.maxHealth;
+                                    this.healthBarFill.clear();
+                                    this.healthBarFill.fillStyle(0x00ff00);
+                                    this.healthBarFill.fillRoundedRect(
+                                        this.sprite.x - barWidth / 2,
+                                        this.sprite.y - 30,
+                                        barWidth * healthPercent,
+                                        barHeight,
+                                        3
+                                    );
+                                }
+                            };
+
+                            this.troopsGroup.add(troopSprite);
+                            this.troopsGroup.add(healthBarBg);
+                            this.troopsGroup.add(healthBarFill);
+
+                            if (!this.placedTroops) this.placedTroops = [];
+                            this.placedTroops.push(troop);
+                        }
 
 
                         const playedIdx = this.selectedCardIndex;
@@ -579,6 +628,7 @@
 
                     this.troopsGroup = this.add.group();
 
+                    this.projectiles = this.add.group();
 
                     this.towers = {
                         kingTower: kingTower,
@@ -606,7 +656,7 @@
                             health: 3648,
                             maxHealth: 3648,
                             damage: 150,
-                            range: 150,
+                            range: 190,
                             attackCooldown: 1000,
                             lastAttack: 0,
                             fill: addHealthBar(this, princessTowerRedLeft, 3648).fill,
@@ -617,7 +667,7 @@
                             health: 3648,
                             maxHealth: 3648,
                             damage: 150,
-                            range: 150,
+                            range: 190,
                             attackCooldown: 1000,
                             lastAttack: 0,
                             fill: addHealthBar(this, princessTowerRedRight, 3648).fill,
@@ -802,8 +852,18 @@
                             if (towerDist < closestTower.range) {
                                 closestTower.lastAttack = closestTower.lastAttack || 0;
                                 if (now - closestTower.lastAttack > closestTower.attackCooldown) {
-                                    troop.currentHealth -= closestTower.damage;
-                                    troop.updateHealth(troop.currentHealth);
+                                    // Fire projectile from tower to troop
+                                    this.createProjectile(
+                                        closestTower.sprite.x, closestTower.sprite.y - 30,
+                                        troop.sprite.x, troop.sprite.y,
+                                        900,
+                                        0xffa500,
+                                        () => {
+                                            troop.currentHealth -= closestTower.damage;
+                                            if (troop.currentHealth < 0) troop.currentHealth = 0;
+                                            troop.updateHealth(troop.currentHealth);
+                                        }
+                                    );
                                     closestTower.lastAttack = now;
                                 }
                             }
@@ -826,18 +886,23 @@
                                 // IN RANGE: stop and attack
                                 troop.lastAttack = troop.lastAttack || 0;
                                 if (now - troop.lastAttack >= 1000 / troop.speed) {
-                                    // Attack the tower
-                                    closestTower.health -= troop.damage;
-                                    if (closestTower.health < 0) closestTower.health = 0;
-
-                                    // Update tower health UI
-                                    if (closestTower.fill) {
-                                        const healthRatio = closestTower.health / closestTower.maxHealth;
-                                        closestTower.fill.clear();
-                                        closestTower.fill.fillStyle(healthRatio > 0.3 ? 0x00ff00 : 0xff0000, 1);
-                                        closestTower.fill.fillRect(-closestTower.width / 2, 0, closestTower.width * healthRatio, 10);
-                                    }
-
+                                    // Fire projectile from troop to tower
+                                    this.createProjectile(
+                                        troop.sprite.x, troop.sprite.y - 10,
+                                        towerX, towerY,
+                                        800,
+                                        0x00bfff,
+                                        () => {
+                                            closestTower.health -= troop.damage;
+                                            if (closestTower.health < 0) closestTower.health = 0;
+                                            if (closestTower.fill) {
+                                                const healthRatio = closestTower.health / closestTower.maxHealth;
+                                                closestTower.fill.clear();
+                                                closestTower.fill.fillStyle(healthRatio > 0.3 ? 0x00ff00 : 0xff0000, 1);
+                                                closestTower.fill.fillRect(-closestTower.width / 2, 0, closestTower.width * healthRatio, 10);
+                                            }
+                                        }
+                                    );
                                     troop.lastAttack = now;
                                 }
                             }
@@ -876,8 +941,27 @@
                     this.fill.fillGradientStyle(0xd97bff, 0xaa00ff, 0x6600aa, 0x440066);
                     this.fill.fillRoundedRect(barX - barWidth / 2, yStart, barWidth, fillHeight, borderRadius);
                 }
-            }
 
+                createProjectile(fromX, fromY, toX, toY, speed = 600, color = 0xffffff, onHit) {
+                    const projectile = this.add.circle(fromX, fromY, 6, color).setDepth(100);
+                    this.projectiles.add(projectile);
+
+                    const angle = Phaser.Math.Angle.Between(fromX, fromY, toX, toY);
+                    const distance = Phaser.Math.Distance.Between(fromX, fromY, toX, toY);
+                    const duration = (distance / speed) * 1000;
+
+                    this.tweens.add({
+                        targets: projectile,
+                        x: toX,
+                        y: toY,
+                        duration: duration,
+                        onComplete: () => {
+                            projectile.destroy();
+                            if (onHit) onHit();
+                        }
+                    });
+                }
+            }
 
             const config = {
                 type: Phaser.AUTO,
@@ -889,7 +973,9 @@
                     mode: Phaser.Scale.RESIZE,
                     autoCenter: Phaser.Scale.CENTER_BOTH
                 },
-                backgroundColor: "#000"
+                backgroundColor: "#000",
+                fps: { forceSetTimeOut: true, target: 60 },
+                disableVisibilityChange: true
             };
 
             const game = new Phaser.Game(config);
