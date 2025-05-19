@@ -8,6 +8,7 @@
     <title>1v1 Match</title>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="troopEngine.js"></script>
 
     <style>
         html,
@@ -30,7 +31,7 @@
 <body>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -83,6 +84,20 @@
             }).catch((err) => {
                 console.error("Error fetching deck:", err);
             });
+
+            const towerHealthData = {
+                king: 6408,
+                enemyKing: 6408,
+                blueLeft: 3648,
+                blueRight: 3648,
+                redLeft: 3648,
+                redRight: 3648
+            };
+
+            const matchHealthRef = ref(db, `matches/${user.uid}/towers`);
+            set(matchHealthRef, towerHealthData)
+                .then(() => console.log("Tower health pushed to Firebase."))
+                .catch((error) => console.error("Failed to push tower health:", error));
         });
 
         function shuffleArray(array) {
@@ -183,7 +198,7 @@
                         'Dart Goblin Evolution': 3,
                         'Three Musketeers': 9,
                         'Electro Wizard': 4,
-                        'Void': 4, // assumed
+                        'Void': 4,
                         'Fireball': 4,
                         'Zap Evolution': 2,
                         'Goblin Demolisher': 4,
@@ -231,7 +246,7 @@
                     image.setOrigin(0.5, 0.5);
                     image.setScale(this.cameras.main.width / image.width);
 
-                    // Tower positions (adjust as needed to match your map)
+
                     const mapCenterX = this.cameras.main.centerX;
                     const mapCenterY = this.cameras.main.centerY;
                     const mapWidth = image.displayWidth;
@@ -239,19 +254,18 @@
 
                     const towerScale = 0.5;
 
-                    // Blue king tower in the middle (bottom)
                     const kingTower = this.add.image(mapCenterX, mapCenterY + mapHeight * 0.19, 'kingTower');
                     kingTower.setOrigin(0.5);
                     kingTower.setScale(towerScale);
                     kingTower.setDepth(10);
 
-                    // Red king tower in the middle (top)
+
                     const enemyKingTower = this.add.image(mapCenterX, mapCenterY - mapHeight * 0.20, 'enemyKingTower');
                     enemyKingTower.setOrigin(0.5);
                     enemyKingTower.setScale(towerScale);
                     enemyKingTower.setDepth(10);
 
-                    // Blue princess towers (bottom left and right)
+
                     const princessTowerBlueLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY + mapHeight * 0.14 - 3, 'princessTowerLeft');
                     princessTowerBlueLeft.setOrigin(0.5);
                     princessTowerBlueLeft.setScale(towerScale);
@@ -262,7 +276,7 @@
                     princessTowerBlueRight.setScale(towerScale);
                     princessTowerBlueRight.setDepth(10);
 
-                    // Red princess towers (top left and right)
+
                     const princessTowerRedLeft = this.add.image(mapCenterX - mapWidth * 0.12 + 3, mapCenterY - mapHeight * 0.14 - 9, 'princessTowerRight');
                     princessTowerRedLeft.setOrigin(0.5);
                     princessTowerRedLeft.setScale(towerScale);
@@ -275,7 +289,6 @@
 
                     this.maxVisibleCards = 4;
 
-                    // Elixir
                     this.elixir = 7;
                     this.maxElixir = 10;
                     this.fillProgress = 0;
@@ -301,16 +314,15 @@
                     this.elixirPerSecond = 1 / 2.8;
 
                     const cardWidth = 80, cardHeight = 120, spacing = 20;
-                    const startX = 60; // Left margin
-                    const yPosition = this.cameras.main.height - cardHeight - 40; // Bottom position
+                    const startX = 60;
+                    const yPosition = this.cameras.main.height - cardHeight - 40;
 
                     this.selectedCardIndex = null;
                     this.deckQueue = this.shuffledDeck.slice(5);
                     this.cardSprites = [];
 
-                    // After changing the hand (adding a card)
                     this.cardSprites.forEach((card, index) => {
-                        card.sprite.removeAllListeners(); // Prevent stacking
+                        card.sprite.removeAllListeners();
                         card.sprite.on('pointerdown', () => {
                             this.selectedCardIndex = index;
                             this.selectedCardName = card.name;
@@ -318,7 +330,7 @@
                         });
                     });
 
-                    // Draw the 4 cards on the bottom left
+
                     startingHand.forEach((cardName, index) => {
                         const xPosition = startX + index * (cardWidth + spacing);
 
@@ -340,21 +352,21 @@
                     });
 
                     const previewX = this.cameras.main.width - cardWidth - 50;
-                    const previewY = yPosition - 10; // Aligned to same Y as other cards
+                    const previewY = yPosition - 10;
 
-                    // Background placeholder
+
                     const previewBg = this.add.graphics();
                     previewBg.fillStyle(0x555555, 1);
                     previewBg.fillRoundedRect(previewX - cardWidth / 2, previewY - cardHeight / 2, cardWidth, cardHeight, 6);
                     previewBg.setDepth(0);
 
-                    // Preview card image
+
                     const previewCardImage = this.add.image(previewX, previewY, nextCard);
                     previewCardImage.setDisplaySize(cardWidth, cardHeight);
                     previewCardImage.setOrigin(0.5);
                     previewCardImage.setDepth(1);
 
-                    const zoneWidth = this.cameras.main.width * 0.4; // 40% of screen width
+                    const zoneWidth = this.cameras.main.width * 0.4;
                     this.placementZone = new Phaser.Geom.Rectangle(
                         this.cameras.main.centerX - zoneWidth / 2,
                         0,
@@ -363,11 +375,9 @@
                     );
 
                     this.zoneGraphics = this.add.graphics();
-                    this.zoneGraphics.lineStyle(4, 0xff0000, 1); // Red border
+                    this.zoneGraphics.lineStyle(4, 0xff0000, 1);
                     this.zoneGraphics.strokeRectShape(this.placementZone);
 
-                    // Input for placing cards
-                    // … inside create():
                     this.input.on('pointerdown', (pointer) => {
                         const { x, y } = pointer;
 
@@ -376,7 +386,6 @@
                             return;
                         }
 
-                        // Clear & re‑draw highlights
                         this.cardSprites.forEach((card) => {
                             card.bg.clear();
                             card.bg.fillStyle(0x444444, 1);
@@ -396,13 +405,13 @@
                         );
 
                         if (!Phaser.Geom.Rectangle.Contains(this.placementZone, x, y)) {
-                            return; // tapped outside the placement zone
+                            return;
                         }
 
                         let cardCost = this.cardElixirCosts[this.selectedCardName];
                         if (cardCost === undefined) {
                             console.warn(`No elixir cost found for card: ${this.selectedCardName}, defaulting to 3`);
-                            cardCost = 3; // fallback
+                            cardCost = 3;
                         }
 
                         if (this.elixir < cardCost) {
@@ -412,15 +421,12 @@
 
                         this.elixir -= cardCost;
 
-                        // 1) Remove played card from hand → into usedCards
                         const playedIdx = this.selectedCardIndex;
                         const playedName = this.startingHand[playedIdx];
                         this.usedCards.push(playedName);
 
-                        // 2) Replace that slot with the previewed nextCard
                         this.startingHand[playedIdx] = this.nextCard;
 
-                        // 3) Pull a fresh nextCard from the deckQueue (and recycle if needed)
                         this.nextCard = this.deckQueue.shift();
                         if (this.nextCard === undefined && this.usedCards.length) {
                             this.deckQueue = Phaser.Utils.Array.Shuffle(this.usedCards.slice());
@@ -428,10 +434,8 @@
                             this.nextCard = this.deckQueue.shift();
                         }
 
-                        // 4) Refresh your UI
                         this.refreshHand();
 
-                        // Update the preview card
                         if (this.nextCard && this.textures.exists(this.nextCard)) {
                             previewCardImage.setTexture(this.nextCard);
                             previewCardImage.setVisible(true);
@@ -439,9 +443,38 @@
                             previewCardImage.setVisible(false);
                         }
 
-                        // 5) Reset selection
+
                         this.selectedCardIndex = null;
                     });
+
+                    function addHealthBar(scene, towerImage, maxHealth) {
+                        const barWidth = 80;
+                        const barHeight = 10;
+                        const offsetY = towerImage.displayHeight / 2 + 12;
+
+                        const bg = scene.add.graphics();
+                        bg.fillStyle(0x000000, 1);
+                        bg.fillRect(-barWidth / 2, 0, barWidth, barHeight);
+
+                        const fill = scene.add.graphics();
+                        fill.fillStyle(0x00ff00, 1);
+                        fill.fillRect(-barWidth / 2, 0, barWidth, barHeight);
+
+                        const container = scene.add.container(towerImage.x, towerImage.y - offsetY, [bg, fill]);
+                        container.setDepth(99);
+
+                        return { container, fill, maxHealth, currentHealth: maxHealth, width: barWidth };
+                    }
+
+                    // Apply level 15 health values
+                    this.towers = {
+                        king: addHealthBar(this, kingTower, 6408),
+                        enemyKing: addHealthBar(this, enemyKingTower, 6408),
+                        blueLeft: addHealthBar(this, princessTowerBlueLeft, 3648),
+                        blueRight: addHealthBar(this, princessTowerBlueRight, 3648),
+                        redLeft: addHealthBar(this, princessTowerRedLeft, 3648),
+                        redRight: addHealthBar(this, princessTowerRedRight, 3648)
+                    };
                 }
 
                 refreshHand() {
@@ -449,14 +482,12 @@
                     const startX = 60;
                     const yPosition = this.cameras.main.height - cardHeight - 40;
 
-                    // Destroy old card sprites and backgrounds
                     this.cardSprites.forEach(card => {
                         card.sprite.destroy();
                         card.bg.destroy();
                     });
                     this.cardSprites = [];
 
-                    // Recreate cards from current startingHand array
                     this.startingHand.forEach((cardName, index) => {
                         const xPos = startX + index * (cardWidth + spacing);
 
@@ -491,6 +522,14 @@
 
                     this.lastUpdateTime = now;
                     this.drawLiquidFill(this.fillProgress);
+
+                    function updateTowerHealth(tower, newHealth) {
+                        tower.currentHealth = Math.max(0, Math.min(newHealth, tower.maxHealth));
+                        const healthRatio = tower.currentHealth / tower.maxHealth;
+                        tower.fill.clear();
+                        tower.fill.fillStyle(healthRatio > 0.3 ? 0x00ff00 : 0xff0000, 1);
+                        tower.fill.fillRect(-tower.width / 2, 0, tower.width * healthRatio, 10);
+                    }
                 }
 
                 drawLiquidFill(progress) {
