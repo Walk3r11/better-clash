@@ -53,6 +53,18 @@
                 return;
             }
 
+            // Get matchId from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            let matchId = urlParams.get('matchId');
+
+            if (!matchId) {
+                // Only create a new match if not already in one
+                matchId = `match_${Date.now()}`;
+                window.location.href = `/game/1v1match.html?matchId=${matchId}`;
+                return;
+            }
+
+            // Now only join the match, do NOT create a new one
             const deckRef = ref(db, `decks/${user.uid}`);
             get(deckRef).then((snapshot) => {
                 if (!snapshot.exists()) {
@@ -79,31 +91,39 @@
                 const nextCard = shuffledDeck[4];
 
 
-                startGame(startingHand, nextCard, shuffledDeck);
+                const initialState = {
+                    elixir: 7,
+                    towers: {
+                        king: 6408,
+                        enemyKing: 6408,
+                        blueLeft: 3648,
+                        blueRight: 3648,
+                        redLeft: 3648,
+                        redRight: 3648
+                    },
+                    placedTroops: [], // will be filled as troops are placed
+                    hand: startingHand,
+                    nextCard: nextCard,
+                    deck: shuffledDeck
+                };
+
+                const matchRef = ref(db, `matches/${matchId}/state`);
+                set(matchRef, initialState)
+                    .then(() => console.log("Initial match state pushed to Firebase."))
+                    .catch((error) => console.error("Failed to push initial match state:", error));
+
+                // Pass matchId to startGame so you can use it later
+                startGame(startingHand, nextCard, shuffledDeck, matchId);
             }).catch((err) => {
                 console.error("Error fetching deck:", err);
             });
-
-            const towerHealthData = {
-                king: 6408,
-                enemyKing: 6408,
-                blueLeft: 3648,
-                blueRight: 3648,
-                redLeft: 3648,
-                redRight: 3648
-            };
-
-            const matchHealthRef = ref(db, `matches/${user.uid}/towers`);
-            set(matchHealthRef, towerHealthData)
-                .then(() => console.log("Tower health pushed to Firebase."))
-                .catch((error) => console.error("Failed to push tower health:", error));
         });
 
         function shuffleArray(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
-        function startGame(startingHand, nextCard, shuffledDeck) {
+        function startGame(startingHand, nextCard, shuffledDeck, matchId) {
             class MatchScene extends Phaser.Scene {
                 constructor() {
                     super({ key: 'MatchScene' });
@@ -113,6 +133,7 @@
                     this.startingHand = data.startingHand;
                     this.nextCard = data.nextCard;
                     this.shuffledDeck = data.shuffledDeck;
+                    this.matchId = data.matchId; // <-- store matchId
                 }
 
                 preload() {
@@ -186,7 +207,8 @@
                 }
 
                 create() {
-                    this.usedCards = [];
+                    this.placedTroops = [];
+                    this.usedCards = []; // <-- Add this line!
 
                     const cardStats = {
                         'Bats Evolution': { health: 150, damage: 50, speed: 1.2 },
@@ -489,6 +511,7 @@
                                 healthBarFill.fillRoundedRect(bx - barWidth / 2, by - 30, barWidth, barHeight, 3);
 
 
+                                const user = getAuth().currentUser;
                                 const troop = {
                                     sprite: troopSprite,
                                     healthBarBg,
@@ -499,6 +522,8 @@
                                     speed: stats.speed,
                                     range: stats.range || 30,
                                     lastAttack: 0,
+                                    team: "blue", // or "red" for enemy
+                                    uid: user.uid, // <--- Add this line!
                                     updateHealth: function (newHealth) {
                                         this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
                                         const healthPercent = this.currentHealth / this.maxHealth;
@@ -539,6 +564,7 @@
                             healthBarFill.fillRoundedRect(x - barWidth / 2, y - 30, barWidth, barHeight, 3);
 
 
+                            const user = getAuth().currentUser;
                             const troop = {
                                 sprite: troopSprite,
                                 healthBarBg,
@@ -549,6 +575,8 @@
                                 speed: stats.speed,
                                 range: stats.range || 30,
                                 lastAttack: 0,
+                                team: "blue", // or "red" for enemy
+                                uid: user.uid, // <--- Add this line!
                                 updateHealth: function (newHealth) {
                                     this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
                                     const healthPercent = this.currentHealth / this.maxHealth;
@@ -712,6 +740,7 @@
                         healthBarFill.fillRoundedRect(troopX - barWidth / 2, troopY - 30, barWidth, barHeight, 3);
 
 
+                        const user = getAuth().currentUser;
                         const troop = {
                             sprite: troopSprite,
                             healthBarBg,
@@ -722,6 +751,8 @@
                             speed: stats.speed,
                             range: stats.range || 30,
                             lastAttack: 0,
+                            team: "blue", // or "red" for enemy
+                            uid: user.uid, // <--- Add this line!
                             updateHealth: function (newHealth) {
                                 this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
                                 const healthPercent = this.currentHealth / this.maxHealth;
@@ -768,6 +799,172 @@
                             this.selectedCardName = null;
                         }
                     });
+
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            const user = getAuth().currentUser;
+                            if (!user) return;
+                            const db = getDatabase();
+                            const matchRef = ref(db, `matches/${user.uid}/state`);
+                            get(matchRef).then(snapshot => {
+                                const state = snapshot.val();
+                                if (!state) return;
+
+                                const now = Date.now();
+                                const elapsed = (now - (state.lastUpdate || now)) / 1000; // seconds
+
+                                this.catchUpGameState(elapsed, state);
+
+                                // Now restore state as usual (elixir, towers, troops, etc.)
+                                // Restore elixir
+                                this.elixir = state.elixir;
+
+                                // Restore towers
+                                for (const [key, towerState] of Object.entries(state.towers)) {
+                                    if (this.towers[key]) {
+                                        this.towers[key].health = towerState.health;
+                                    }
+                                }
+
+                                // Restore troops (destroy old, recreate new)
+                                this.placedTroops.forEach(troop => {
+                                    troop.sprite.destroy();
+                                    troop.healthBarBg.destroy();
+                                    troop.healthBarFill.destroy();
+                                });
+                                this.placedTroops = [];
+
+                                state.placedTroops.forEach(troopData => {
+                                    const stats = cardStats[troopData.card] || {};
+                                    const barWidth = 50;
+                                    const barHeight = 6;
+
+                                    // Optionally mirror Y for the "red" team if you want their perspective
+                                    let y = troopData.y;
+                                    if (isPlayer2) y = mirrorY(troopData.y, this.cameras.main.height);
+                                    const troopSprite = this.add.image(troopData.x, y, troopData.card);
+                                    troopSprite.setScale(0.05);
+                                    troopSprite.setDepth(20);
+
+                                    const healthBarBg = this.add.graphics();
+                                    const healthBarFill = this.add.graphics();
+
+                                    healthBarBg.fillStyle(0x555555);
+                                    healthBarBg.fillRoundedRect(troopData.x - barWidth / 2, y - 30, barWidth, barHeight, 3);
+                                    healthBarFill.fillStyle(0x00ff00);
+                                    healthBarFill.fillRoundedRect(troopData.x - barWidth / 2, y - 30, barWidth, barHeight, 3);
+
+                                    const isMine = troopData.uid === user.uid;
+                                    // Optionally color or mark your own troops
+                                    if (isMine) {
+                                        troopSprite.setTint(0x00bfff); // blue for your troops
+                                    } else {
+                                        troopSprite.setTint(0xff5555); // red for enemy troops
+                                    }
+
+                                    const troop = {
+                                        sprite: troopSprite,
+                                        healthBarBg,
+                                        healthBarFill,
+                                        maxHealth: troopData.maxHealth || stats.health,
+                                        currentHealth: troopData.health,
+                                        damage: troopData.damage || stats.damage,
+                                        speed: troopData.speed || stats.speed,
+                                        range: troopData.range || stats.range || 30,
+                                        lastAttack: troopData.lastAttack || 0,
+                                        team: troopData.team,
+                                        uid: troopData.uid, // <--- Add this!
+                                        updateHealth: function (newHealth) {
+                                            this.currentHealth = Phaser.Math.Clamp(newHealth, 0, this.maxHealth);
+                                            const healthPercent = this.currentHealth / this.maxHealth;
+                                            this.healthBarFill.clear();
+                                            this.healthBarFill.fillStyle(0x00ff00);
+                                            this.healthBarFill.fillRoundedRect(
+                                                this.sprite.x - barWidth / 2,
+                                                this.sprite.y - 30,
+                                                barWidth * healthPercent,
+                                                barHeight,
+                                                3
+                                            );
+                                        }
+                                    };
+
+                                    this.troopsGroup.add(troopSprite);
+                                    this.troopsGroup.add(healthBarBg);
+                                    this.troopsGroup.add(healthBarFill);
+
+                                    this.placedTroops.push(troop);
+                                });
+                            });
+                        }
+                    });
+
+                    // Remove or comment out this block in your create():
+                    // this.time.addEvent({
+                    //     delay: 2000,
+                    //     loop: true,
+                    //     callback: () => this.syncGameStateToFirebase()
+                    // });
+                }
+
+                // Call this whenever you want to sync state (e.g. after troop placement, elixir change, etc)
+                syncGameStateToFirebase() {
+                    const user = getAuth().currentUser;
+                    if (!user) return;
+                    const db = getDatabase();
+                    // Write player-specific state
+                    const playerRef = ref(db, `matches/${this.matchId}/${user.uid}`);
+                    set(playerRef, {
+                        elixir: this.elixir,
+                        towers: this.towers,
+                        hand: this.startingHand,
+                        deck: this.shuffledDeck,
+                        usedCards: this.usedCards
+                    });
+                    // Write shared state (troops)
+                    const sharedRef = ref(db, `matches/${this.matchId}/state`);
+                    set(sharedRef, {
+                        placedTroops: this.placedTroops.map(troop => ({
+                            x: troop.sprite.x,
+                            y: troop.sprite.y,
+                            health: troop.currentHealth,
+                            maxHealth: troop.maxHealth,
+                            damage: troop.damage,
+                            speed: troop.speed,
+                            range: troop.range,
+                            lastAttack: troop.lastAttack,
+                            card: troop.sprite.texture.key,
+                            team: troop.team,
+                            uid: troop.uid
+                        })),
+                        lastUpdate: Date.now()
+                    });
+                }
+
+                syncGameStateToFirebase() {
+                    const user = getAuth().currentUser;
+                    if (!user) return;
+                    const db = getDatabase();
+                    const matchRef = ref(db, `matches/${this.matchId}/state`);
+                    set(matchRef, {
+                        elixir: this.elixir,
+                        towers: Object.fromEntries(
+                            Object.entries(this.towers).map(([key, tower]) => [
+                                key,
+                                { health: tower.health }
+                            ])
+                        ),
+                        placedTroops: this.placedTroops.map(troop => ({
+                            x: troop.sprite.x,
+                            y: troop.sprite.y,
+                            health: troop.currentHealth,
+                            card: troop.sprite.texture.key
+                        })),
+                        hand: this.startingHand,
+                        nextCard: this.nextCard,
+                        deck: this.shuffledDeck,
+                        lastUpdate: Date.now()
+                    });
                 }
 
                 refreshHand() {
@@ -803,24 +1000,31 @@
 
                 update(time, delta) {
                     const now = Date.now();
-                    const elapsedSeconds = (now - this.lastUpdateTime) / 1000;
+                    let elapsedSeconds = (now - (this.lastUpdateTime || now)) / 1000;
+                    this.lastUpdateTime = now;
+
+                    // Elixir catch-up
                     if (this.elixir < this.maxElixir && elapsedSeconds > 0) {
                         this.elixir += this.elixirPerSecond * elapsedSeconds;
                         if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
                         this.fillProgress = this.elixir / this.maxElixir;
                         this.elixirText.setText(Math.floor(this.elixir));
                     }
-                    this.lastUpdateTime = now;
                     this.drawLiquidFill(this.fillProgress);
 
+                    // Troop logic catch-up
                     if (this.placedTroops) {
                         for (let i = this.placedTroops.length - 1; i >= 0; i--) {
                             const troop = this.placedTroops[i];
 
                             // Find the closest enemy tower
+                            const enemyTowerKeys = troop.team === "blue"
+                                ? ['enemyKing', 'redLeft', 'redRight']
+                                : ['king', 'blueLeft', 'blueRight'];
+
                             let closestTower = null;
                             let minDist = Infinity;
-                            for (const key of ['enemyKing', 'redLeft', 'redRight']) {
+                            for (const key of enemyTowerKeys) {
                                 const tower = this.towers[key];
                                 if (!tower || !tower.sprite.active || tower.health <= 0) continue;
                                 const dist = Phaser.Math.Distance.Between(
@@ -851,7 +1055,176 @@
                             );
                             if (towerDist < closestTower.range) {
                                 closestTower.lastAttack = closestTower.lastAttack || 0;
-                                if (now - closestTower.lastAttack > closestTower.attackCooldown) {
+                                if (now - closestTower.lastAttack >= closestTower.attackCooldown) {
+                                    // Fire projectile from tower to troop
+                                    this.createProjectile(
+                                        closestTower.sprite.x, closestTower.sprite.y - 30,
+                                        troop.sprite.x, troop.sprite.y,
+                                        900,
+                                        0xffa500,
+                                        () => {
+                                            troop.currentHealth -= closestTower.damage;
+                                            if (troop.currentHealth < 0) troop.currentHealth = 0;
+                                            troop.updateHealth(troop.currentHealth);
+                                        }
+                                    );
+                                    closestTower.lastAttack = now;
+                                }
+                            }
+
+                            // Use troop.range if defined, else default to melee (already declared above as attackRange)
+
+                            if (dist > attackRange) {
+                                // Only move if not already in range
+                                const moveSpeed = troop.speed * (delta / 16.67);
+                                const moveDist = moveSpeed;
+
+                                // Normalize direction
+                                const dx = (towerX - troopX) / dist;
+                                const dy = (towerY - troopY) / dist;
+
+                                // Move toward target
+                                troop.sprite.x += dx * moveDist;
+                                troop.sprite.y += dy * moveDist;
+                            } else {
+                                // IN RANGE: stop and attack
+                                troop.lastAttack = troop.lastAttack || 0;
+                                if (now - troop.lastAttack >= 1000 / troop.speed) {
+                                    // Fire projectile from troop to tower
+                                    this.createProjectile(
+                                        troop.sprite.x, troop.sprite.y - 10,
+                                        towerX, towerY,
+                                        800,
+                                        0x00bfff,
+                                        () => {
+                                            closestTower.health -= troop.damage;
+                                            if (closestTower.health < 0) closestTower.health = 0;
+                                            if (closestTower.fill) {
+                                                const healthRatio = closestTower.health / closestTower.maxHealth;
+                                                closestTower.fill.clear();
+                                                closestTower.fill.fillStyle(healthRatio > 0.3 ? 0x00ff00 : 0xff0000, 1);
+                                                closestTower.fill.fillRect(-closestTower.width / 2, 0, closestTower.width * healthRatio, 10);
+                                            }
+                                        }
+                                    );
+                                    troop.lastAttack = now;
+                                }
+                            }
+
+                            // Always update health bar position after moving
+                            const barWidth = 50;
+                            const barHeight = 6;
+                            troop.healthBarBg.clear();
+                            troop.healthBarBg.fillStyle(0x555555);
+                            troop.healthBarBg.fillRoundedRect(
+                                troop.sprite.x - barWidth / 2,
+                                troop.sprite.y - 30,
+                                barWidth,
+                                barHeight,
+                                3
+                            );
+                            troop.updateHealth(troop.currentHealth);
+
+                            // Remove troop if dead
+                            if (troop.currentHealth <= 0) {
+                                troop.sprite.destroy();
+                                troop.healthBarBg.destroy();
+                                troop.healthBarFill.destroy();
+                                this.placedTroops.splice(i, 1);
+                            }
+                        }
+                    }
+
+                    // Throttle Firebase sync to ~60 times per second
+                    this._lastSync = this._lastSync || 0;
+                    if (time - this._lastSync > 1) { // For every millisecond, use 1 instead of 16
+                        this.syncGameStateToFirebase();
+                        this._lastSync = time;
+                    }
+
+                    if (this.placedTroops) {
+                        for (let i = this.placedTroops.length - 1; i >= 0; i--) {
+                            const troop = this.placedTroops[i];
+
+                            // Find closest enemy troop
+                            let closestEnemy = null;
+                            let minTroopDist = Infinity;
+                            for (let j = 0; j < this.placedTroops.length; j++) {
+                                if (i === j) continue;
+                                const other = this.placedTroops[j];
+                                if (other.team === troop.team) continue; // Only attack enemy team
+                                const dist = Phaser.Math.Distance.Between(
+                                    troop.sprite.x, troop.sprite.y,
+                                    other.sprite.x, other.sprite.y
+                                );
+                                if (dist < minTroopDist) {
+                                    minTroopDist = dist;
+                                    closestEnemy = other;
+                                }
+                            }
+
+                            const troopAttackRange = troop.range || 40;
+                            const now = Date.now();
+
+                            // If enemy troop in range, attack it
+                            if (closestEnemy && minTroopDist <= troopAttackRange) {
+                                troop.lastAttack = troop.lastAttack || 0;
+                                if (now - troop.lastAttack >= 1000 / troop.speed) {
+                                    // Fire projectile from troop to enemy troop
+                                    this.createProjectile(
+                                        troop.sprite.x, troop.sprite.y - 10,
+                                        closestEnemy.sprite.x, closestEnemy.sprite.y,
+                                        800,
+                                        0xff00ff,
+                                        () => {
+                                            closestEnemy.currentHealth -= troop.damage;
+                                            if (closestEnemy.currentHealth < 0) closestEnemy.currentHealth = 0;
+                                            closestEnemy.updateHealth(closestEnemy.currentHealth);
+                                        }
+                                    );
+                                    troop.lastAttack = now;
+                                }
+                            }
+
+                            // Find the closest enemy tower
+                            const enemyTowerKeys = troop.team === "blue"
+                                ? ['enemyKing', 'redLeft', 'redRight']
+                                : ['king', 'blueLeft', 'blueRight'];
+
+                            let closestTower = null;
+                            let minDist = Infinity;
+                            for (const key of enemyTowerKeys) {
+                                const tower = this.towers[key];
+                                if (!tower || !tower.sprite.active || tower.health <= 0) continue;
+                                const dist = Phaser.Math.Distance.Between(
+                                    troop.sprite.x, troop.sprite.y,
+                                    tower.sprite.x, tower.sprite.y
+                                );
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    closestTower = tower;
+                                }
+                            }
+                            if (!closestTower) continue;
+
+                            // Troop stats
+                            const attackRange = troop.range || 40;
+                            const isRanged = !!troop.range;
+
+                            const troopX = troop.sprite.x;
+                            const troopY = troop.sprite.y;
+                            const towerX = closestTower.sprite.x;
+                            const towerY = closestTower.sprite.y;
+                            const dist = Phaser.Math.Distance.Between(troopX, troopY, towerX, towerY);
+
+                            // Tower attacks troop if in range
+                            const towerDist = Phaser.Math.Distance.Between(
+                                closestTower.sprite.x, closestTower.sprite.y,
+                                troop.sprite.x, troop.sprite.y
+                            );
+                            if (towerDist < closestTower.range) {
+                                closestTower.lastAttack = closestTower.lastAttack || 0;
+                                if (now - closestTower.lastAttack >= closestTower.attackCooldown) {
                                     // Fire projectile from tower to troop
                                     this.createProjectile(
                                         closestTower.sprite.x, closestTower.sprite.y - 30,
@@ -961,6 +1334,60 @@
                         }
                     });
                 }
+
+                catchUpGameState(elapsedSeconds, state) {
+                    // Elixir catch-up
+                    this.elixir += this.elixirPerSecond * elapsedSeconds;
+                    if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
+
+                    // Troop movement catch-up (simple version: move each troop toward its target for elapsedSeconds)
+                    state.placedTroops.forEach((troopData, i) => {
+                        const stats = this.cardStats?.[troopData.card] || {};
+                        let { x, y } = troopData;
+                        let remainingTime = elapsedSeconds;
+
+                        // Find closest enemy tower
+                        let closestTower = null;
+                        let minDist = Infinity;
+                        for (const key of ['enemyKing', 'redLeft', 'redRight']) {
+                            const tower = this.towers[key];
+                            if (!tower || !tower.sprite.active || tower.health <= 0) continue;
+                            const dist = Phaser.Math.Distance.Between(x, y, tower.sprite.x, tower.sprite.y);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                closestTower = tower;
+                            }
+                        }
+                        if (!closestTower) return;
+
+                        const attackRange = troopData.range || stats.range || 40;
+                        const speed = troopData.speed || stats.speed || 1;
+                        const damage = troopData.damage || stats.damage || 0;
+
+                        // Move toward tower for elapsedSeconds or until in range
+                        let dist = Phaser.Math.Distance.Between(x, y, closestTower.sprite.x, closestTower.sprite.y);
+                        while (remainingTime > 0 && dist > attackRange) {
+                            const moveDist = speed * remainingTime * 60; // crude estimate (pixels per second)
+                            const dx = (closestTower.sprite.x - x) / dist;
+                            const dy = (closestTower.sprite.y - y) / dist;
+                            const step = Math.min(moveDist, dist - attackRange);
+                            x += dx * step;
+                            y += dy * step;
+                            remainingTime = 0; // For simplicity, move all at once
+                            dist = Phaser.Math.Distance.Between(x, y, closestTower.sprite.x, closestTower.sprite.y);
+                        }
+
+                        // If in range, simulate one attack (optional: simulate multiple attacks)
+                        if (dist <= attackRange) {
+                            closestTower.health -= damage;
+                            if (closestTower.health < 0) closestTower.health = 0;
+                        }
+
+                        // Update troopData for rendering
+                        troopData.x = x;
+                        troopData.y = y;
+                    });
+                }
             }
 
             const config = {
@@ -979,8 +1406,16 @@
             };
 
             const game = new Phaser.Game(config);
-            game.scene.start('MatchScene', { startingHand, nextCard, shuffledDeck });
-        } 
+            game.scene.start('MatchScene', { startingHand, nextCard, shuffledDeck, matchId });
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const matchId = urlParams.get('matchId');
+
+        // Assume arenaHeight is the height of your game world (e.g., this.cameras.main.height)
+        function mirrorY(y, arenaHeight) {
+            return arenaHeight - y;
+        }
     </script>
 </body>
 
