@@ -70,7 +70,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import {
-            getDatabase, ref, set, remove, get, onValue
+            getDatabase, ref, set, remove, get, onValue, runTransaction
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import {
             getAuth, onAuthStateChanged
@@ -119,32 +119,48 @@
                 if (!snapshot.exists()) return;
 
                 const players = Object.values(snapshot.val())
-                    .filter(p => !p.matched)
+                    .filter(p => !p.matched && !p.matchedFlag)
                     .sort((a, b) => a.timestamp - b.timestamp); // oldest first
 
                 if (players.length >= 2) {
                     const [p1, p2] = players;
-
                     const matchId = "match_" + Date.now();
 
-                    // Create match only once — let only the OLDEST player do this
+                    // Only the oldest player attempts to create the match
                     if (userId === p1.uid) {
-                        await set(ref(db, 'matches/' + matchId), {
-                            players: {
-                                [p1.uid]: p1.email,
-                                [p2.uid]: p2.email
-                            },
-                            timestamp: Date.now()
+                        const p1QueueRef = ref(db, `queue/${p1.uid}`);
+                        const p2QueueRef = ref(db, `queue/${p2.uid}`);
+
+                        // Use a transaction on p1's queue entry
+                        await runTransaction(p1QueueRef, (currentData) => {
+                            if (currentData && (!currentData.matched && !currentData.matchedFlag)) {
+                                // Mark both as matched
+                                set(ref(db, `queue/${p2.uid}/matched`), matchId);
+                                set(ref(db, `queue/${p1.uid}/matched`), matchId);
+                                set(ref(db, `queue/${p1.uid}/matchedFlag`), true);
+                                set(ref(db, `queue/${p2.uid}/matchedFlag`), true);
+
+                                // Create the match
+                                set(ref(db, 'matches/' + matchId), {
+                                    players: {
+                                        [p1.uid]: p1.email,
+                                        [p2.uid]: p2.email
+                                    },
+                                    timestamp: Date.now()
+                                });
+
+                                // Clean up queue later
+                                setTimeout(async () => {
+                                    await remove(ref(db, 'queue/' + p1.uid));
+                                    await remove(ref(db, 'queue/' + p2.uid));
+                                }, 2000);
+
+                                // Mark this entry as matched
+                                return { ...currentData, matched: matchId, matchedFlag: true };
+                            }
+                            // Already matched, do nothing
+                            return;
                         });
-
-                        await set(ref(db, `queue/${p1.uid}/matched`), matchId);
-                        await set(ref(db, `queue/${p2.uid}/matched`), matchId);
-
-                        // Optional: clean up queue later
-                        setTimeout(async () => {
-                            await remove(ref(db, 'queue/' + p1.uid));
-                            await remove(ref(db, 'queue/' + p2.uid));
-                        }, 2000);
                     }
                 }
 
@@ -159,6 +175,11 @@
 
             setInterval(tryMatchPlayers, 2000);
         });
+
+        // Example: get matchId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const matchId = urlParams.get('matchId');
+        // Use matchId for all Firebase refs: matches/${matchId}/state
     </script>
 </body>
 
